@@ -1,39 +1,22 @@
-# seliky
+## 3 分钟了解 webdriver2
 
-#### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+<br>
+webdriver2：一个selenium封装库，在不影响原功能的基础上，新增了以下特性：
+<hr>
 
-#### 软件架构
-软件架构说明
+#### 1. 支持robotframework框架。
 
+#### 2. 当前元素会高亮闪烁。在执行时能够肉眼看到点了哪个元素
 
-#### 安装教程
+#### 3. 支持弹性定位，可以应对有穷性可变化的元素
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+#### 4. 会持续添加新功能：如cookie登录、各种事件组合等功能
 
-#### 使用说明
+<hr>
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+#### 为什么要封装？
 
-#### 参与贡献
-
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
-
-
-#### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+selenium-library和selenium虽然名字相同，其实是截然不容的两个库，原生语法可以更加方便理解selenium源码。<br>
+元素闪烁可以清楚知道执行到哪里了，可以更加方便排查问题。<br>
+即便是可变元素，仍然可以像平常一样写定位，不用来回改改改。<hr>
+查看案例demo了解更多...
