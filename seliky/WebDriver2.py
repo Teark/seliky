@@ -4,6 +4,7 @@ from selenium.common.exceptions import NoAlertPresentException, WebDriverExcepti
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from seliky import log
 
 
 class WebDriver2:
@@ -68,7 +69,8 @@ class WebDriver2:
                 return elem
 
         if isinstance(locator, str):
-            return __find_ele(locator)
+            ele = __find_ele(locator)
+            return ele
         elif isinstance(locator, list):
             for i in locator:
                 try:
@@ -85,13 +87,6 @@ class WebDriver2:
     def window_scroll(self, width=None, height=None):
         """
         Synchronously Executes JavaScript in the current window/frame.
-
-        :Args:
-         - script: The JavaScript to execute.
-         - *args: Any applicable arguments for your JavaScript.
-
-        :Usage:
-            driver.execute_script('return document.title;')
         """
         if height is None:
             c = 1
@@ -141,6 +136,10 @@ class WebDriver2:
             ActionChains(self.driver).move_by_offset(x, y).perform()
 
     def stretch(self, size=0.8):
+        """
+        Zoom in or out of the page
+        :param size: percentage of zoom in or out
+        """
         js = "document.body.style.zoom='{}'".format(size)
         self.driver.execute_script(js)
 
@@ -148,15 +147,37 @@ class WebDriver2:
         ActionChains(self.driver).release().perform()
 
     def click(self, locator, index=0):
+        """
+        click a element by it's locator
+        :param locator: Positioning expression
+        :param index: If there are more than one, use the first one
+
+        Usage:
+            driver.click(id=su)
+        """
         elem = self.__ele(locator, index)
+        if elem:
+            log.info("☺ ✔ %s" % locator)
+        else:
+            log.error("☹ ✘ %s" % locator)
         return elem.click()
 
     def text(self, locator, index=0):
-        """The text of the element."""
+        """
+        The text of the element
+        :param locator: Positioning expression
+        :param index: If there are more than one, use the first one
+
+        Usage:
+            driver.text(id=su)
+        """
         elem = self.__ele(locator, index)
         return elem.text
 
     def clear(self, locator, index=0):
+        """
+        clear a input box
+        """
         elem = self.__ele(locator, index)
         return elem.clear()
 
@@ -165,14 +186,17 @@ class WebDriver2:
         return elem.get_attribute(name)
 
     def is_selected(self, locator, index=0):
-        """Returns whether the element is selected.
-
+        """
+        whether the element is selected, return a bool
         Can be used to check if a checkbox or radio button is selected.
         """
         elem = self.__ele(locator, index)
         return elem.is_selected()
 
     def is_displayed(self, locator, index=0):
+        """
+        weather the element is displayed, return a bool
+        """
         elem = self.__ele(locator, index)
         return elem.is_displayed()
 
@@ -181,18 +205,32 @@ class WebDriver2:
         return elem.is_enabled()
 
     def send_keys(self, value, locator, index=0):
+        """
+        Send value to input box
+        :param value: the value to put
+        :param locator: Positioning expression
+        :param index: If there are more than one, use the first one
+
+        Usage:
+            driver.send_keys("hello", "id=kw")
+        """
         elem = self.__ele(locator, index)
         return elem.send_keys(value)
 
     def get(self, uri):
+        """
+        Request a page, which is the first thing you have to do
+        :param uri: url of the page
+
+        Usage:
+            driver.get("https://www.baidu.com")
+        """
         return self.driver.get(uri)
 
     @property
     def title(self):
-        """Returns the title of the current page.
-
-        :Usage:
-            title = driver.title
+        """
+        Returns the title of the current page.
         """
         return self.driver.title
 
@@ -215,19 +253,14 @@ class WebDriver2:
     def current_url(self):
         """
         Gets the URL of the current page.
-
-        :Usage:
-            driver.current_url
         """
         return self.driver.current_url
 
     def quit(self):
         """
         Quits the driver and closes every associated window.
-
-        :Usage:
-            driver.quit()
         """
+        log.info("✌ ending at %s ..." % log.now_time)
         return self.driver.quit()
 
     def maximize_window(self):
@@ -256,26 +289,17 @@ class WebDriver2:
     def back(self):
         """
         Goes one step backward in the browser history.
-
-        :Usage:
-            driver.back()
         """
         return self.driver.back()
 
     def forward(self):
         """
         Goes one step forward in the browser history.
-
-        :Usage:
-            driver.forward()
         """
         return self.driver.forward()
 
     def refresh(self):
         """
         Refreshes the current page.
-
-        :Usage:
-            driver.refresh()
         """
         return self.driver.refresh()
