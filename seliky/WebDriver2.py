@@ -1,9 +1,14 @@
+import os
+import platform
 import time
 from selenium import webdriver
-from selenium.common.exceptions import NoAlertPresentException, WebDriverException, NoSuchElementException
+from selenium.common.exceptions import NoAlertPresentException, WebDriverException, NoSuchElementException, \
+    StaleElementReferenceException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.select import Select
+
 from seliky import log
 
 
@@ -234,20 +239,18 @@ class WebDriver2:
         """
         return self.driver.title
 
-    def save_screenshot(self, filename):
+    def save_screenshot(self, path=None, filename=None):
         """
         Saves a screenshot of the current window to a PNG image file. Returns
            False if there is any IOError, else returns True. Use full paths in
            your filename.
-
-        :Args:
-         - filename: The full path you wish to save your screenshot to. This
-           should end with a `.png` extension.
-
-        :Usage:
-            driver.save_screenshot('/Screenshots/foo.png')
         """
-        return self.driver.get_screenshot_as_file(filename)
+        if path is None:
+            path = os.getcwd()
+        if filename is None:
+            filename = str(time.time()).split(".")[0] + ".png"
+        file_path = os.path.join(path, filename)
+        self.driver.save_screenshot(file_path)
 
     @property
     def current_url(self):
@@ -303,3 +306,187 @@ class WebDriver2:
         Refreshes the current page.
         """
         return self.driver.refresh()
+
+    def switch_to_frame(self, frame_reference):
+        """
+        Switches focus to the specified frame, by index, name, or webelement.
+        """
+        self.driver.switch_to.frame(frame_reference)
+
+    def switch_to_parent_frame(self):
+        """
+        Switches focus to the parent context. If the current context is the top
+        level browsing context, the context remains unchanged.
+        """
+        self.driver.switch_to.parent_frame()
+
+    @property
+    def window_handles(self):
+        """
+        Returns the handles of all windows within the current session.
+        """
+        return self.driver.window_handles
+
+    @property
+    def new_window_handle(self):
+        """
+        open a new tag
+        """
+        all_handle = self.window_handles
+        return all_handle[-1]
+
+    def switch_to_window(self, handle):
+        """
+        Switches focus to the specified window.
+        """
+        self.driver.switch_to.window(handle)
+
+    def dismiss_alert(self):
+        """
+        Dismisses the alert available.
+        """
+        self.driver.switch_to.alert.dismiss()
+
+    @property
+    def get_alert_text(self):
+        """
+        switch to alert then get it's text
+        """
+        return self.driver.switch_to.alert.text
+
+    def submit(self, locator):
+        """
+        Submits a form
+        """
+        elem = self.__ele(locator)
+        elem.submit()
+
+    def tag_name(self, locator):
+        elem = self.__ele(locator)
+        return elem.tag_name
+
+    def get_text(self, locator):
+        elem = self.__ele(locator)
+        return elem.text
+
+    def size(self, locator):
+        elem = self.__ele(locator)
+        return elem.size
+
+    def get_property(self, name, locator):
+        elem = self.__ele(locator)
+        return elem.get_property(name)
+
+    def move_to_element(self, locator):
+        elem = self.__ele(locator)
+        ActionChains(self.driver).move_to_element(elem).perform()
+
+    def click_and_hold(self, locator):
+        elem = self.__ele(locator)
+        ActionChains(self.driver).click_and_hold(elem).perform()
+
+    def double_click(self, locator):
+        elem = self.__ele(locator)
+        ActionChains(self.driver).double_click(elem).perform()
+
+    def context_click(self, locator):
+        elem = self.__ele(locator)
+        ActionChains(self.driver).context_click(elem).perform()
+
+    def drag_and_drop_by_offset(self, x, y, locator):
+        elem = self.__ele(locator)
+        ActionChains(self.driver).drag_and_drop_by_offset(elem, xoffset=x, yoffset=y).perform()
+
+    def refresh_element(self, locator):
+        elem = self.__ele(locator)
+        for i in range(6):
+            if elem is not None:
+                try:
+                    elem
+                except StaleElementReferenceException:
+                    self.driver.refresh()
+                else:
+                    break
+            else:
+                time.sleep(1)
+        else:
+            raise TimeoutError("element is not attached to the page document.")
+
+    def select_by_value(self, value, locator):
+        select_elem = self.__ele(locator)
+        Select(select_elem).select_by_value(value)
+
+    def select_by_index(self, index, locator):
+        select_elem = self.__ele(locator)
+        Select(select_elem).select_by_index(index)
+
+    def select_by_visible_text(self, text, locator):
+        select_elem = self.__ele(locator)
+        Select(select_elem).select_by_visible_text(text)
+
+    def location_once_scrolled_into_view(self, locator):
+        elem = self.__ele(locator)
+        return elem.location_once_scrolled_into_view()
+
+    def enter(self, locator):
+        elem = self.__ele(locator)
+        elem.send_keys(Keys.ENTER)
+
+    def select_all(self, locator):
+        elem = self.__ele(locator)
+        if platform.system().lower() == "darwin":
+            elem.send_keys(Keys.COMMAND, "a")
+        else:
+            elem.send_keys(Keys.CONTROL, "a")
+
+    def cut(self, locator):
+        elem = self.__ele(locator)
+        if platform.system().lower() == "darwin":
+            elem.send_keys(Keys.COMMAND, "x")
+        else:
+            elem.send_keys(Keys.CONTROL, "x")
+
+    def copy(self, locator):
+        elem = self.__ele(locator)
+        if platform.system().lower() == "darwin":
+            elem.send_keys(Keys.COMMAND, "c")
+        else:
+            elem.send_keys(Keys.CONTROL, "c")
+
+    def paste(self, locator):
+        elem = self.__ele(locator)
+        if platform.system().lower() == "darwin":
+            elem.send_keys(Keys.COMMAND, "v")
+        else:
+            elem.send_keys(Keys.CONTROL, "v")
+
+    def backspace(self, locator):
+        elem = self.__ele(locator)
+        elem.send_keys(Keys.BACKSPACE)
+
+    def delete(self, locator):
+        elem = self.__ele(locator)
+        elem.send_keys(Keys.DELETE)
+
+    def tab(self, locator):
+        elem = self.__ele(locator)
+        elem.send_keys(Keys.TAB)
+
+    def space(self, locator):
+        elem = self.__ele(locator)
+        elem.send_keys(Keys.SPACE)
+
+    def inner_click(self, locator):
+        """
+        arguments[0].click()
+        """
+        elem = self.__ele(locator)
+        return self.driver.execute_script("arguments[0].click();", elem)
+
+    def execute_script(self, js=None, *args):
+        """
+        Execute JavaScript scripts.
+        """
+        if js is None:
+            raise ValueError("Please input js script")
+        return self.driver.execute_script(js, *args)
