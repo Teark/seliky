@@ -19,4 +19,6 @@ webdriver2：一个selenium封装库，在不影响原功能的基础上，新�
 selenium-library和selenium虽然名字相同，其实是截然不容的两个库，原生语法可以更加方便理解selenium源码。<br>
 元素闪烁可以清楚知道执行到哪里了，可以更加方便排查问题。<br>
 即便是可变元素，仍然可以像平常一样写定位，不用来回改改改。<hr>
-查看案例demo了解更多...
+查看案例demo了解更多...<br>
+https://pypi.org/project/seliky/0.8/ <br>
+pip install seliky -i https://pypi.org/simple

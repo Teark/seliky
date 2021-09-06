@@ -1,13 +1,16 @@
 import os
 import platform
 import time
+
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException, WebDriverException, NoSuchElementException, \
-    StaleElementReferenceException
+    StaleElementReferenceException, TimeoutException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as ec
 
 from seliky import log
 
@@ -21,6 +24,7 @@ class WebDriver2:
     def __init__(self, browser='chrome'):
         self.driver = webdriver.Chrome() if browser == 'chrome' else webdriver.Firefox() if browser == 'firefox' else \
             webdriver.Ie() if browser == 'ie' else webdriver.Safari() if browser == 'safari' else webdriver.Chrome()
+        self.timeout = 5
 
     def __highlight(self, ele):
         """
@@ -39,6 +43,32 @@ class WebDriver2:
         except WebDriverException:
             pass
 
+    def __find_ele(self, locator_, index=0, timeout=5):
+        if locator_.startswith("//"):
+            by = By.XPATH
+        elif locator_.startswith("xpath"):
+            by = By.XPATH
+            locator_ = locator_[6:]
+        elif locator_.startswith("id"):
+            by = By.ID
+            locator_ = locator_[3:]
+        elif locator_.startswith("css"):
+            by = By.CLASS_NAME
+            locator_ = locator_[4:]
+        elif locator_.startswith("class"):
+            by = By.CLASS_NAME
+            locator_ = locator_[6:]
+        else:
+            raise TypeError("you'd better write locator in xpath")
+        try:
+            elem = WebDriverWait(self.driver, timeout).until(lambda x: x.find_elements(by, locator_))[index]
+            # elem = self.driver.find_elements(by=by, value=locator_)[index]
+        except (TimeoutException, NoSuchElementException, IndexError, StaleElementReferenceException):
+            elem = []
+        if elem:
+            self.__highlight(elem)
+        return elem
+
     def __ele(self, locator, index=0):
         """
         Find elements by its location
@@ -46,60 +76,59 @@ class WebDriver2:
         :param index: which one in find list
         """
 
-        def __find_ele(locator_):
-            time.sleep(0.5)
-            if locator_.startswith("//"):
-                by = By.XPATH
-            elif locator_.startswith("xpath"):
-                by = By.XPATH
-                locator_ = locator_[6:]
-            elif locator_.startswith("id"):
-                by = By.ID
-                locator_ = locator_[3:]
-            elif locator_.startswith("css"):
-                by = By.CLASS_NAME
-                locator_ = locator_[4:]
-            elif locator_.startswith("class"):
-                by = By.CLASS_NAME
-                locator_ = locator_[6:]
-            else:
-                raise TypeError("you'd better write locator in xpath")
-            try:
-                elem = self.driver.find_elements(by=by, value=locator_)[index]
-            except (UnboundLocalError, NoSuchElementException, IndexError):
-                elem = None
-                pass
-            if elem:
-                self.__highlight(elem)
-                return elem
-
+        ele = []
         if isinstance(locator, str):
-            ele = __find_ele(locator)
-            return ele
+            ele = self.__find_ele(locator, index)
+            if not ele:
+                log.error("☹ ✘ %s" % locator)
         elif isinstance(locator, list):
             for i in locator:
-                try:
-                    ele = __find_ele(i)
-                    if ele:
-                        return ele
-                    else:
-                        continue
-                except (NoSuchElementException, ValueError):
+                ele = self.__find_ele(i, index, timeout=3)
+                if ele:
+                    log.info("☺ ✔ %s" % i)
+                    break
+                else:
+                    log.warn("☹ - %s" % i)
                     continue
         else:
             raise TypeError("locator must be str or list")
+        return ele
+
+    def click(self, locator, index=0):
+        """
+        click a element by it's locator
+        :param locator: Positioning expression
+        :param index: If there are more than one, use the first one
+
+        Usage:
+            driver.click(id=su)
+        """
+        elem = self.__ele(locator, index)
+        if elem:
+            if isinstance(locator, str):
+                log.info("☺ ✔ %s" % locator)
+            return elem.click()
+        elif self.driver.execute_script("arguments[0].click();", elem):
+            pass
+        else:
+            log.error("☹ ✘ %s" % locator)
 
     def window_scroll(self, width=None, height=None):
         """
         Synchronously Executes JavaScript in the current window/frame.
         """
         if height is None:
-            c = 1
-            while True:
-                ActionChains(self.driver).send_keys(Keys.UP)
-                c += 1
-                if c >= 100:
-                    break
+            self.execute_script("var q=document.body.scrollTop=0")
+            # self.execute_script("var q=document.documentElement.scrollTop=0")
+            # time.sleep(1)
+            # self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
+            # c = 1
+            # while True:
+            #     time.sleep(0.02)
+            #     ActionChains(self.driver).send_keys(Keys.UP)
+            #     c += 1
+            #     if c >= 100:
+            #         break
             # self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
             # self.execute_script("var q=document.documentElement.scrollTop=0")
             # self.execute_script("var q=document.body.scrollTop=0")
@@ -150,22 +179,6 @@ class WebDriver2:
 
     def release(self):
         ActionChains(self.driver).release().perform()
-
-    def click(self, locator, index=0):
-        """
-        click a element by it's locator
-        :param locator: Positioning expression
-        :param index: If there are more than one, use the first one
-
-        Usage:
-            driver.click(id=su)
-        """
-        elem = self.__ele(locator, index)
-        if elem:
-            log.info("☺ ✔ %s" % locator)
-        else:
-            log.error("☹ ✘ %s" % locator)
-        return elem.click()
 
     def text(self, locator, index=0):
         """
@@ -263,7 +276,7 @@ class WebDriver2:
         """
         Quits the driver and closes every associated window.
         """
-        log.info("✌ ending at %s ..." % log.now_time)
+        log.info("✌ \nending at %s ..." % log.now_time)
         return self.driver.quit()
 
     def maximize_window(self):
@@ -294,6 +307,9 @@ class WebDriver2:
         Goes one step backward in the browser history.
         """
         return self.driver.back()
+
+    def default_content(self):
+        return self.driver.switch_to.default_content()
 
     def forward(self):
         """
@@ -475,13 +491,6 @@ class WebDriver2:
     def space(self, locator):
         elem = self.__ele(locator)
         elem.send_keys(Keys.SPACE)
-
-    def inner_click(self, locator):
-        """
-        arguments[0].click()
-        """
-        elem = self.__ele(locator)
-        return self.driver.execute_script("arguments[0].click();", elem)
 
     def execute_script(self, js=None, *args):
         """
