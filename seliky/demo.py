@@ -4,7 +4,8 @@ how to use in python, how to use in robotframework, se bellow
 """
 
 import time
-from WebDriver2 import WebDriver2  # 自带高亮
+from WebDriver2 import WebDriver2
+import SeleniumLibrary
 
 
 class Page:

@@ -5,7 +5,7 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setuptools.setup(
     name="seliky",
-    version="0.8",
+    version="0.8.2",
     author="TEARK",
     author_email="913355434@qq.com",
     description="a better lib based on selenium",

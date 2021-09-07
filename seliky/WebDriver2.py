@@ -4,13 +4,12 @@ import time
 
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException, WebDriverException, NoSuchElementException, \
-    StaleElementReferenceException, TimeoutException
+    StaleElementReferenceException, TimeoutException, ElementClickInterceptedException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
-# from selenium.webdriver.support import expected_conditions as ec
 
 from seliky import log
 
@@ -22,9 +21,16 @@ class WebDriver2:
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
     def __init__(self, browser='chrome'):
-        self.driver = webdriver.Chrome() if browser == 'chrome' else webdriver.Firefox() if browser == 'firefox' else \
-            webdriver.Ie() if browser == 'ie' else webdriver.Safari() if browser == 'safari' else webdriver.Chrome()
-        self.timeout = 5
+        if platform.system().lower() in ["windows", "macos"]:  # 本地环境
+            self.driver = webdriver.Chrome() if browser == 'chrome' else webdriver.Firefox() if browser == 'firefox' else \
+                webdriver.Ie() if browser == 'ie' else webdriver.Safari() if browser == 'safari' else webdriver.Chrome()
+            self.driver.maximize_window()
+        else:  # 流水线-linux
+            options = webdriver.ChromeOptions()
+            for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
+                options.add_argument(i)
+            self.driver = webdriver.Firefox(options=options) if browser == 'firefox' else webdriver.Chrome(
+                options=options)
 
     def __highlight(self, ele):
         """
@@ -44,6 +50,7 @@ class WebDriver2:
             pass
 
     def __find_ele(self, locator_, index=0, timeout=5):
+        time.sleep(0.1)
         if locator_.startswith("//"):
             by = By.XPATH
         elif locator_.startswith("xpath"):
@@ -62,12 +69,12 @@ class WebDriver2:
             raise TypeError("you'd better write locator in xpath")
         try:
             elem = WebDriverWait(self.driver, timeout).until(lambda x: x.find_elements(by, locator_))[index]
+            if elem:
+                self.__highlight(elem)
+                return elem
             # elem = self.driver.find_elements(by=by, value=locator_)[index]
-        except (TimeoutException, NoSuchElementException, IndexError, StaleElementReferenceException):
-            elem = []
-        if elem:
-            self.__highlight(elem)
-        return elem
+        except (TimeoutException, NoSuchElementException, IndexError, StaleElementReferenceException) as e:
+            raise e
 
     def __ele(self, locator, index=0):
         """
@@ -75,24 +82,24 @@ class WebDriver2:
         :param locator: element location expression
         :param index: which one in find list
         """
-
-        ele = []
         if isinstance(locator, str):
             ele = self.__find_ele(locator, index)
-            if not ele:
+            if ele:
+                return ele
+            else:
                 log.error("☹ ✘ %s" % locator)
+                raise ValueError("No such element, please check locator expression")
         elif isinstance(locator, list):
             for i in locator:
                 ele = self.__find_ele(i, index, timeout=3)
                 if ele:
                     log.info("☺ ✔ %s" % i)
-                    break
+                    return ele
                 else:
                     log.warn("☹ - %s" % i)
                     continue
         else:
             raise TypeError("locator must be str or list")
-        return ele
 
     def click(self, locator, index=0):
         """
@@ -104,14 +111,12 @@ class WebDriver2:
             driver.click(id=su)
         """
         elem = self.__ele(locator, index)
-        if elem:
-            if isinstance(locator, str):
-                log.info("☺ ✔ %s" % locator)
+        if elem and isinstance(locator, str):
+            log.info("☺ ✔ %s" % locator)
+        try:
             return elem.click()
-        elif self.driver.execute_script("arguments[0].click();", elem):
-            pass
-        else:
-            log.error("☹ ✘ %s" % locator)
+        except ElementClickInterceptedException:
+            self.driver.execute_script("arguments[0].click();", elem)
 
     def window_scroll(self, width=None, height=None):
         """
@@ -222,17 +227,19 @@ class WebDriver2:
         elem = self.__ele(locator, index)
         return elem.is_enabled()
 
-    def send_keys(self, value, locator, index=0):
+    def send_keys(self, locator, value, clear: bool = True):
         """
         Send value to input box
-        :param value: the value to put
         :param locator: Positioning expression
-        :param index: If there are more than one, use the first one
+        :param value: the value to put
+        :param clear: weather clear
 
         Usage:
             driver.send_keys("hello", "id=kw")
         """
-        elem = self.__ele(locator, index)
+        elem = self.__ele(locator)
+        if clear:
+            self.clear(locator)
         return elem.send_keys(value)
 
     def get(self, uri):
@@ -245,7 +252,6 @@ class WebDriver2:
         """
         return self.driver.get(uri)
 
-    @property
     def title(self):
         """
         Returns the title of the current page.
@@ -265,7 +271,6 @@ class WebDriver2:
         file_path = os.path.join(path, filename)
         self.driver.save_screenshot(file_path)
 
-    @property
     def current_url(self):
         """
         Gets the URL of the current page.
@@ -278,6 +283,9 @@ class WebDriver2:
         """
         log.info("✌ \nending at %s ..." % log.now_time)
         return self.driver.quit()
+
+    def close(self):
+        return self.driver.close()
 
     def maximize_window(self):
         """
@@ -336,20 +344,17 @@ class WebDriver2:
         """
         self.driver.switch_to.parent_frame()
 
-    @property
     def window_handles(self):
         """
         Returns the handles of all windows within the current session.
         """
         return self.driver.window_handles
 
-    @property
     def new_window_handle(self):
         """
         open a new tag
         """
-        all_handle = self.window_handles
-        return all_handle[-1]
+        return self.window_handles()[-1]
 
     def switch_to_window(self, handle):
         """
@@ -381,15 +386,11 @@ class WebDriver2:
         elem = self.__ele(locator)
         return elem.tag_name
 
-    def get_text(self, locator):
-        elem = self.__ele(locator)
-        return elem.text
-
     def size(self, locator):
         elem = self.__ele(locator)
         return elem.size
 
-    def get_property(self, name, locator):
+    def get_property(self, locator, name):
         elem = self.__ele(locator)
         return elem.get_property(name)
 
@@ -409,7 +410,12 @@ class WebDriver2:
         elem = self.__ele(locator)
         ActionChains(self.driver).context_click(elem).perform()
 
-    def drag_and_drop_by_offset(self, x, y, locator):
+    def drag_and_drop(self, source, target):
+        elem1 = self.__ele(source)
+        elem2 = self.__ele(target)
+        ActionChains(self.driver).drag_and_drop(elem1, elem2).perform()
+
+    def drag_and_drop_by_offset(self, locator, x, y):
         elem = self.__ele(locator)
         ActionChains(self.driver).drag_and_drop_by_offset(elem, xoffset=x, yoffset=y).perform()
 
@@ -428,15 +434,15 @@ class WebDriver2:
         else:
             raise TimeoutError("element is not attached to the page document.")
 
-    def select_by_value(self, value, locator):
+    def select_by_value(self, locator, value):
         select_elem = self.__ele(locator)
         Select(select_elem).select_by_value(value)
 
-    def select_by_index(self, index, locator):
+    def select_by_index(self, locator, index):
         select_elem = self.__ele(locator)
         Select(select_elem).select_by_index(index)
 
-    def select_by_visible_text(self, text, locator):
+    def select_by_visible_text(self, locator, text):
         select_elem = self.__ele(locator)
         Select(select_elem).select_by_visible_text(text)
 
@@ -499,3 +505,41 @@ class WebDriver2:
         if js is None:
             raise ValueError("Please input js script")
         return self.driver.execute_script(js, *args)
+
+    """
+    ==================为了让rf无缝替换====================
+    """
+
+    def click_button(self, locator, index=0):
+        return self.click(locator, index)
+
+    def click_element(self, locator, index=0):
+        return self.click(locator, index)
+
+    def click_image(self, locator, index=0):
+        return self.click(locator, index)
+
+    def click_link(self, locator, index=0):
+        return self.click(locator, index)
+
+    def close_browser(self):
+        return self.quit()
+
+    def close_window(self):
+        return self.close()
+
+    def get_text(self, locator):
+        elem = self.__ele(locator)
+        return elem.text
+
+    def get_title(self):
+        return self.title()
+
+    def go_to(self, uri):
+        return self.get(uri)
+
+    def input_password(self, locator: str, value: str, clear: bool = True):
+        return self.send_keys(value, locator, clear)
+
+    def input_text(self, locator: str, value: str, clear: bool = True):
+        return self.send_keys(value, locator, clear)
