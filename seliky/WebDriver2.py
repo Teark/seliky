@@ -67,14 +67,19 @@ class WebDriver2:
             locator_ = locator_[6:]
         else:
             raise TypeError("you'd better write locator in xpath")
-        try:
-            elem = WebDriverWait(self.driver, timeout).until(lambda x: x.find_elements(by, locator_))[index]
-            if elem:
-                self.__highlight(elem)
-                return elem
-            # elem = self.driver.find_elements(by=by, value=locator_)[index]
-        except (TimeoutException, NoSuchElementException, IndexError, StaleElementReferenceException) as e:
-            raise e
+        n = 0
+        while True:
+            n += 1
+            try:
+                elem = WebDriverWait(self.driver, timeout).until(lambda x: x.find_elements(by, locator_))[index]
+                if elem:
+                    self.__highlight(elem)
+                    return elem
+            except (TimeoutException, NoSuchElementException, IndexError, StaleElementReferenceException):
+                if n < 2:
+                    continue
+                else:
+                    raise ValueError("not found elem %s" % locator_)
 
     def __ele(self, locator, index=0):
         """
@@ -88,7 +93,7 @@ class WebDriver2:
                 return ele
             else:
                 log.error("☹ ✘ %s" % locator)
-                raise ValueError("No such element, please check locator expression")
+                raise ValueError("Not find element %s, please check locator expression" % locator)
         elif isinstance(locator, list):
             for i in locator:
                 ele = self.__find_ele(i, index, timeout=3)
@@ -227,17 +232,18 @@ class WebDriver2:
         elem = self.__ele(locator, index)
         return elem.is_enabled()
 
-    def send_keys(self, locator, value, clear: bool = True):
+    def send_keys(self, locator, value, index=0, clear: bool = False):
         """
         Send value to input box
         :param locator: Positioning expression
         :param value: the value to put
+        :param index: which one, default the first
         :param clear: weather clear
 
         Usage:
             driver.send_keys("hello", "id=kw")
         """
-        elem = self.__ele(locator)
+        elem = self.__ele(locator, index)
         if clear:
             self.clear(locator)
         return elem.send_keys(value)
