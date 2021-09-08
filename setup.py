@@ -5,10 +5,10 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setuptools.setup(
     name="seliky",
-    version="0.8.2",
+    version="0.9",
     author="TEARK",
     author_email="913355434@qq.com",
-    description="a better lib based on selenium",
+    description="a better ui autotest lib based on selenium, compatible with robot framework",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://gitee.com/teark/seliky.git",

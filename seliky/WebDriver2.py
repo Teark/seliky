@@ -10,7 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
-
+from pyvirtualdisplay import Display
 from seliky import log
 
 
@@ -26,11 +26,9 @@ class WebDriver2:
                 webdriver.Ie() if browser == 'ie' else webdriver.Safari() if browser == 'safari' else webdriver.Chrome()
             self.driver.maximize_window()
         else:  # 流水线-linux
-            options = webdriver.ChromeOptions()
-            for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
-                options.add_argument(i)
-            self.driver = webdriver.Firefox(options=options) if browser == 'firefox' else webdriver.Chrome(
-                options=options)
+            self.display = Display(size=(1920, 1080))
+            self.display.start()
+            self.driver = webdriver.Chrome()
 
     def __highlight(self, ele):
         """
@@ -288,7 +286,8 @@ class WebDriver2:
         Quits the driver and closes every associated window.
         """
         log.info("✌ \nending at %s ..." % log.now_time)
-        return self.driver.quit()
+        self.driver.quit()
+        self.display.stop()
 
     def close(self):
         return self.driver.close()
