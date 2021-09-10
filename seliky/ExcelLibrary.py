@@ -239,7 +239,6 @@ class ExcelLibrary:
         | Get Workbook Values  |                                                    |
 
         """
-        sheetData = []
         workbookData = []
         for sheet_name in self.sheetNames:
             if includeEmptyCells is True:
