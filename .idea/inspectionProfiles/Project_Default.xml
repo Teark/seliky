@@ -24,6 +24,7 @@
       <option name="ignoredIdentifiers">
         <list>
           <option value="urllib.*" />
+          <option value="list.click" />
         </list>
       </option>
     </inspection_tool>

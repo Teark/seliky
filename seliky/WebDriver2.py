@@ -10,7 +10,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
-from pyvirtualdisplay import Display
 from seliky import log
 
 
@@ -20,15 +19,16 @@ class WebDriver2:
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    def __init__(self, browser='chrome'):
-        if platform.system().lower() in ["windows", "macos"]:  # 本地环境
+    def open_browser(self, browser='chrome', display: bool = True):
+        if platform.system().lower() in ["windows", "macos"] and display:
             self.driver = webdriver.Chrome() if browser == 'chrome' else webdriver.Firefox() if browser == 'firefox' else \
                 webdriver.Ie() if browser == 'ie' else webdriver.Safari() if browser == 'safari' else webdriver.Chrome()
             self.driver.maximize_window()
-        else:  # 流水线-linux
-            self.display = Display(size=(1920, 1080))
-            self.display.start()
-            self.driver = webdriver.Chrome()
+        else:
+            options = webdriver.ChromeOptions()
+            for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
+                options.add_argument(i)
+            self.driver = webdriver.Chrome(options=options)
 
     def __highlight(self, ele):
         """
@@ -47,7 +47,7 @@ class WebDriver2:
         except WebDriverException:
             pass
 
-    def __find_ele(self, locator_, index=0, timeout=5):
+    def __find_ele(self, locator_, index=0, timeout=3):
         time.sleep(0.1)
         if locator_.startswith("//"):
             by = By.XPATH
@@ -77,7 +77,7 @@ class WebDriver2:
                 if n < 2:
                     continue
                 else:
-                    raise ValueError("not found elem %s" % locator_)
+                    break
 
     def __ele(self, locator, index=0):
         """
@@ -100,7 +100,10 @@ class WebDriver2:
                     return ele
                 else:
                     log.warn("☹ - %s" % i)
-                    continue
+                    if locator.index(i) == len(locator) - 1:
+                        raise ValueError("no such ele")
+                    else:
+                        continue
         else:
             raise TypeError("locator must be str or list")
 
@@ -224,11 +227,17 @@ class WebDriver2:
         weather the element is displayed, return a bool
         """
         elem = self.__ele(locator, index)
-        return elem.is_displayed()
+        if elem:
+            return elem.is_displayed()
+        else:
+            return False
 
     def is_enable(self, locator, index=0):
         elem = self.__ele(locator, index)
-        return elem.is_enabled()
+        if elem:
+            return elem.is_enabled()
+        else:
+            return False
 
     def send_keys(self, locator, value, index=0, clear: bool = False):
         """
@@ -244,7 +253,10 @@ class WebDriver2:
         elem = self.__ele(locator, index)
         if clear:
             self.clear(locator)
-        return elem.send_keys(value)
+        if elem:
+            return elem.send_keys(value)
+        else:
+            raise ValueError("no such elem")
 
     def get(self, uri):
         """
@@ -287,7 +299,6 @@ class WebDriver2:
         """
         log.info("✌ \nending at %s ..." % log.now_time)
         self.driver.quit()
-        self.display.stop()
 
     def close(self):
         return self.driver.close()

@@ -5,7 +5,7 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setuptools.setup(
     name="seliky",
-    version="0.12",
+    version="0.22",
     author="TEARK",
     author_email="913355434@qq.com",
     description="a better ui autotest lib based on selenium, compatible with robot framework",
@@ -15,8 +15,10 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'selenium',
-        'pyvirtualdisplay',
-        'colorama'
+        'colorama',
+        'natsort',
+        'xlutils'
+
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

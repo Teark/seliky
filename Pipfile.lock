@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "aa39d7065d2d0a28d937b6c9ce9e88ca9fd1d95135487d54de3532b635f06c9a"
+            "sha256": "a5d5c19555ec61526c8db77bea87576da1b80c863b8bd80f31253a50e270243d"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -31,6 +31,14 @@
             ],
             "version": "==0.3"
         },
+        "natsort": {
+            "hashes": [
+                "sha256:00c603a42365830c4722a2eb7663a25919551217ec09a243d3399fa8dd4ac403",
+                "sha256:d0f4fc06ca163fa4a5ef638d9bf111c67f65eedcc7920f98dec08e489045b67e"
+            ],
+            "index": "pypi",
+            "version": "==7.1.1"
+        },
         "pyvirtualdisplay": {
             "hashes": [
                 "sha256:3dd8f63d32a134c07c2433f6931e9877172a99a33757f0e5cd146612e1c6380d",
@@ -54,6 +62,29 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4' and python_version < '4'",
             "version": "==1.26.6"
+        },
+        "xlrd": {
+            "hashes": [
+                "sha256:6a33ee89877bd9abc1158129f6e94be74e2679636b8a205b43b85206c3f0bbdd",
+                "sha256:f72f148f54442c6b056bf931dbc34f986fd0c3b0b6b5a58d013c9aef274d0c88"
+            ],
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5'",
+            "version": "==2.0.1"
+        },
+        "xlutils": {
+            "hashes": [
+                "sha256:7e0e2c233bd185fecf5e2bd3f4e9469ca4a3bd87da64c82cfe5b2af27e7f9e54",
+                "sha256:b56640862c030e9d53104e7f1d750135fdfabf6bf55e425e5ac40fdee9dbaeb9"
+            ],
+            "index": "pypi",
+            "version": "==2.0.0"
+        },
+        "xlwt": {
+            "hashes": [
+                "sha256:a082260524678ba48a297d922cc385f58278b8aa68741596a87de01a9c628b2e",
+                "sha256:c59912717a9b28f1a3c2a98fd60741014b06b043936dcecbc113eaaada156c88"
+            ],
+            "version": "==1.3.0"
         }
     },
     "develop": {}
