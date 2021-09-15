@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a5d5c19555ec61526c8db77bea87576da1b80c863b8bd80f31253a50e270243d"
+            "sha256": "d4ac89d1a4b8ec619e69cfc948bbcdc57f86882b91b98b41a4ce603d4699655b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -16,6 +16,12 @@
         ]
     },
     "default": {
+        "appium-python-client": {
+            "hashes": [
+                "sha256:8fc6825aa67c75ad1710a71586166770149a105ea1e23ee61bd308edcc62654c"
+            ],
+            "version": "==1.2.0"
+        },
         "colorama": {
             "hashes": [
                 "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b",
@@ -31,6 +37,12 @@
             ],
             "version": "==0.3"
         },
+        "func-timeout": {
+            "hashes": [
+                "sha256:74cd3c428ec94f4edfba81f9b2f14904846d5ffccc27c92433b8b5939b5575dd"
+            ],
+            "version": "==4.3.5"
+        },
         "natsort": {
             "hashes": [
                 "sha256:00c603a42365830c4722a2eb7663a25919551217ec09a243d3399fa8dd4ac403",
@@ -38,6 +50,14 @@
             ],
             "index": "pypi",
             "version": "==7.1.1"
+        },
+        "poium": {
+            "hashes": [
+                "sha256:31ba83d4dc013d385404c701be693258053ca3bb746eab431158ce23f41f7054",
+                "sha256:d3ef4cd828605764ebee3091c3681e07fef33b1d5542f278b900c1f0360fe489"
+            ],
+            "index": "pypi",
+            "version": "==1.0.2"
         },
         "pyvirtualdisplay": {
             "hashes": [

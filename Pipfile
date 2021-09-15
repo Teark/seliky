@@ -9,6 +9,7 @@ colorama = "*"
 pyvirtualdisplay = "*"
 natsort = "*"
 xlutils = "*"
+poium = "*"
 
 [dev-packages]
 

@@ -2,15 +2,18 @@ import os
 import platform
 import time
 
+from func_timeout import func_set_timeout, FunctionTimedOut
 from selenium import webdriver
-from selenium.common.exceptions import NoAlertPresentException, WebDriverException, NoSuchElementException, \
-    StaleElementReferenceException, TimeoutException, ElementClickInterceptedException
+from selenium.common.exceptions import NoAlertPresentException, WebDriverException, \
+    StaleElementReferenceException, ElementClickInterceptedException, TimeoutException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
-from selenium.webdriver.support.ui import WebDriverWait
 from seliky import log
+
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as ec
 
 
 class WebDriver2:
@@ -19,8 +22,16 @@ class WebDriver2:
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    def open_browser(self, browser='chrome', display: bool = True):
-        if platform.system().lower() in ["windows", "macos"] and display:
+    def __init__(self, display: bool = True, log_: bool = True):
+        """
+        :param display: will be headless show if False
+        :param log_: will not show log.info if False
+        """
+        self.display = display
+        self.log_ = log_
+
+    def open_browser(self, browser='chrome'):
+        if platform.system().lower() in ["windows", "macos"] and self.display:
             self.driver = webdriver.Chrome() if browser == 'chrome' else webdriver.Firefox() if browser == 'firefox' else \
                 webdriver.Ie() if browser == 'ie' else webdriver.Safari() if browser == 'safari' else webdriver.Chrome()
             self.driver.maximize_window()
@@ -29,28 +40,36 @@ class WebDriver2:
             for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
                 options.add_argument(i)
             self.driver = webdriver.Chrome(options=options)
+        return self.driver
 
     def __highlight(self, ele):
         """
         element will be red and blue in several quickly times
         :param ele: element locator
         """
-        try:
-            for _ in range(2):
-                self.driver.execute_script('arguments[0].style.border="2px solid #FF0000"', ele)
-                time.sleep(0.1)
+        if self.display:
+            try:
+                for _ in range(2):
+                    self.driver.execute_script('arguments[0].style.border="2px solid #FF0000"', ele)
+                    time.sleep(0.1)
+                    self.driver.execute_script('arguments[0].style.border="2px solid #00FF00"', ele)
+                    time.sleep(0.1)
                 self.driver.execute_script('arguments[0].style.border="2px solid #00FF00"', ele)
-                time.sleep(0.1)
-            self.driver.execute_script('arguments[0].style.border="2px solid #00FF00"', ele)
-            time.sleep(0.5)
-            self.driver.execute_script('arguments[0].style.border=""', ele)
-        except WebDriverException:
-            pass
+                time.sleep(0.5)
+                self.driver.execute_script('arguments[0].style.border=""', ele)
+            except WebDriverException:
+                pass
 
-    def __find_ele(self, locator_, index=0, timeout=3):
-        time.sleep(0.1)
-        if locator_.startswith("//"):
+    @func_set_timeout(0.5)
+    def __eles(self, key, vlaue):
+        elems = self.driver.find_elements(by=key, value=vlaue)
+        return elems
+
+    def __find_ele(self, locator_, index: int = 0, timeout: int = 5, raise_: bool = False):
+        time.sleep(0.2)
+        if locator_.startswith("/"):
             by = By.XPATH
+            locator_ = locator_
         elif locator_.startswith("xpath"):
             by = By.XPATH
             locator_ = locator_[6:]
@@ -63,66 +82,137 @@ class WebDriver2:
         elif locator_.startswith("class"):
             by = By.CLASS_NAME
             locator_ = locator_[6:]
+        elif locator_.startswith('class_name'):
+            by = By.CLASS_NAME
+            locator_ = locator_[11:]
+        elif locator_.startswith('link'):
+            by = By.LINK_TEXT
+            locator_ = locator_[5:]
+        elif locator_.startswith('link_text'):
+            by = By.LINK_TEXT
+            locator_ = locator_[10:]
+        elif locator_.startswith('partial'):
+            by = By.PARTIAL_LINK_TEXT
+            locator_ = locator_[8:]
+        elif locator_.startswith('partial_link_text'):
+            by = By.PARTIAL_LINK_TEXT
+            locator_ = locator_[18:]
+        elif locator_.startswith('css'):
+            by = By.CSS_SELECTOR
+            locator_ = locator_[4:]
+        elif locator_.startswith('css_selector'):
+            by = By.CSS_SELECTOR
+            locator_ = locator_[13:]
+        elif locator_.startswith('tag'):
+            by = By.TAG_NAME
+            locator_ = locator_[4:]
         else:
-            raise TypeError("you'd better write locator in xpath")
-        n = 0
-        while True:
-            n += 1
+            raise TypeError("you'd better write locator in xpath, such as '//div[@class='seliky']' -> %s" % locator_)
+        for i in range(timeout):
             try:
-                elem = WebDriverWait(self.driver, timeout).until(lambda x: x.find_elements(by, locator_))[index]
+                elem = self.__eles(key=by, vlaue=locator_)
                 if elem:
+                    elem = elem[index]  # The first one is selected by default
                     self.__highlight(elem)
                     return elem
-            except (TimeoutException, NoSuchElementException, IndexError, StaleElementReferenceException):
-                if n < 2:
-                    continue
                 else:
-                    break
+                    time.sleep(1)
+                    continue
+            except FunctionTimedOut as e:
+                if raise_ and i == timeout:
+                    raise e
+                self.switch_to().default_content()
+                time.sleep(1)
 
-    def __ele(self, locator, index=0):
+    def __ele(self, locator, index=0, timeout=6, raise_: bool = False):
         """
         Find elements by its location
         :param locator: element location expression
         :param index: which one in find list
         """
         if isinstance(locator, str):
-            ele = self.__find_ele(locator, index)
+            ele = self.__find_ele(locator, index, timeout, raise_)
             if ele:
                 return ele
             else:
-                log.error("☹ ✘ %s" % locator)
-                raise ValueError("Not find element %s, please check locator expression" % locator)
-        elif isinstance(locator, list):
+                if raise_:
+                    log.error("☹ ✘ %s" % locator)
+                    raise ValueError("Not find element %s, please check locator expression" % locator)
+                else:
+                    log.warn("☹ - %s" % locator)
+        elif isinstance(locator, list or tuple):
             for i in locator:
                 ele = self.__find_ele(i, index, timeout=3)
                 if ele:
-                    log.info("☺ ✔ %s" % i)
+                    if self.log_:
+                        log.info("☺ ✔ %s" % i)
                     return ele
                 else:
                     log.warn("☹ - %s" % i)
                     if locator.index(i) == len(locator) - 1:
-                        raise ValueError("no such ele")
+                        log.warn("☹ - no right ele in the locator list %s" % locator)
                     else:
                         continue
         else:
-            raise TypeError("locator must be str or list")
+            raise TypeError("locator must be str or iterable type %s" % locator)
 
-    def click(self, locator, index=0):
+    def click(self, locator, index: int = 0, timeout: int = 6, raise_: bool = False):
         """
         click a element by it's locator
         :param locator: Positioning expression
         :param index: If there are more than one, use the first one
-
+        :param timeout: find it in this time or fail
+        :param raise_: weather raise exception when it ocur
         Usage:
             driver.click(id=su)
         """
-        elem = self.__ele(locator, index)
-        if elem and isinstance(locator, str):
+        elem = self.__ele(locator, index, timeout, raise_)
+        if elem and isinstance(locator, str) and self.log_:
             log.info("☺ ✔ %s" % locator)
         try:
             return elem.click()
         except ElementClickInterceptedException:
-            self.driver.execute_script("arguments[0].click();", elem)
+            try:
+                self.driver.execute_script("arguments[0].click();", elem)
+            except Exception as e:
+                if raise_:
+                    raise e
+        except Exception as e:
+            if raise_:
+                raise e
+
+    def send_keys(self, locator, value, index: int = 0, timeout: int = 6, clear: bool = False):
+        """
+        Send value to input box
+
+        Usage:
+            driver.send_keys("hello", "id=kw")
+        """
+        elem = self.__ele(locator, index, timeout)
+        if elem:
+            if clear:
+                elem.clear()
+            return elem.send_keys(value)
+        else:
+            raise ValueError("no such elem")
+
+    def is_displayed(self, locator: str, index: int = 0, timeout: int = 6):
+        """
+        weather the element is displayed in html dom, return a bool
+        """
+        elem = self.__ele(locator, index, timeout)
+        return elem if elem else False
+
+    def is_visible(self, locator: str, timeout: int = 6):
+        """
+        weather the element is visible, css not hidden, return a bool
+        """
+        try:
+            ele = WebDriverWait(self.driver, timeout).until(
+                ec.visibility_of_element_located((By.XPATH, locator)))
+            return ele
+        except TimeoutException:
+            return False
 
     def window_scroll(self, width=None, height=None):
         """
@@ -216,19 +306,13 @@ class WebDriver2:
 
     def is_selected(self, locator, index=0):
         """
-        whether the element is selected, return a bool
-        Can be used to check if a checkbox or radio button is selected.
-        """
-        elem = self.__ele(locator, index)
-        return elem.is_selected()
-
-    def is_displayed(self, locator, index=0):
-        """
-        weather the element is displayed, return a bool
+        whether the element is selected, return a bool, Can be used to check if a checkbox or radio button is selected.
+        To reader:
+        This kind of judgment will be added to judge whether or not. Why not add others? It will report an error, but whether to return yes or no instead of returning an error
         """
         elem = self.__ele(locator, index)
         if elem:
-            return elem.is_displayed()
+            return elem.is_selected()
         else:
             return False
 
@@ -238,25 +322,6 @@ class WebDriver2:
             return elem.is_enabled()
         else:
             return False
-
-    def send_keys(self, locator, value, index=0, clear: bool = False):
-        """
-        Send value to input box
-        :param locator: Positioning expression
-        :param value: the value to put
-        :param index: which one, default the first
-        :param clear: weather clear
-
-        Usage:
-            driver.send_keys("hello", "id=kw")
-        """
-        elem = self.__ele(locator, index)
-        if clear:
-            self.clear(locator)
-        if elem:
-            return elem.send_keys(value)
-        else:
-            raise ValueError("no such elem")
 
     def get(self, uri):
         """
@@ -297,7 +362,8 @@ class WebDriver2:
         """
         Quits the driver and closes every associated window.
         """
-        log.info("✌ \nending at %s ..." % log.now_time)
+        if self.log_:
+            log.info("✌ \nending at %s ..." % log.now_time)
         self.driver.quit()
 
     def close(self):
