@@ -5,7 +5,7 @@ import time
 from func_timeout import func_set_timeout, FunctionTimedOut
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException, WebDriverException, \
-    StaleElementReferenceException, ElementClickInterceptedException, TimeoutException
+    StaleElementReferenceException, ElementClickInterceptedException, TimeoutException, InvalidSelectorException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -22,24 +22,50 @@ class WebDriver2:
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    def __init__(self, display: bool = True, log_: bool = True):
+    def __init__(self, display: bool = True, log_: bool = True, executable_path: str = ''):
         """
         :param display: will be headless show if False
         :param log_: will not show log.info if False
         """
         self.display = display
         self.log_ = log_
+        self.chrome_path = executable_path if 'chrome' in executable_path else 'chromedriver'
+        self.gecko_path = executable_path if 'gecko' in executable_path else "geckodriver"
 
-    def open_browser(self, browser='chrome'):
+    def open_browser(self, browser='chrome', options: list = ''):
+        """
+        the first thing to do
+        :param browser: browser
+        :param options: for add argument in driver, especial:
+            '--headless'
+            '--no-sandbox'
+            '--disable-gpu'
+            '--disable-dev-shm-usage'
+            'window-size=1920x1080'
+            'blink-settings=imagesEnabled=False'
+            'user-agent="MQQBrowser/26 Mozilla/5.0 (Linux; U; Android 2.3.7; zh-cn; MB200 Build/GRJ22; CyanogenMod-7) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1"'
+            'user-data-dir=C:\\Users\\Administrator\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache'
+        """
+        opt = webdriver.ChromeOptions()
+        for i in options:
+            opt.add_argument(i)
         if platform.system().lower() in ["windows", "macos"] and self.display:
-            self.driver = webdriver.Chrome() if browser == 'chrome' else webdriver.Firefox() if browser == 'firefox' else \
-                webdriver.Ie() if browser == 'ie' else webdriver.Safari() if browser == 'safari' else webdriver.Chrome()
+            self.driver = webdriver.Chrome(
+                executable_path=self.chrome_path,
+                chrome_options=opt
+            ) if browser == 'chrome' else webdriver.Firefox(
+                executable_path=self.gecko_path, service_log_path=os.devnull
+            ) if browser == 'firefox' else webdriver.Ie() if browser == 'ie' else webdriver.Safari(
+            ) if browser == 'safari' else webdriver.Chrome(
+                executable_path=self.chrome_path,
+                chrome_options=opt
+            )
             self.driver.maximize_window()
         else:
             options = webdriver.ChromeOptions()
             for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
                 options.add_argument(i)
-            self.driver = webdriver.Chrome(options=options)
+            self.driver = webdriver.Chrome(executable_path=self.chrome_path, options=options)
         return self.driver
 
     def __highlight(self, ele):
@@ -116,15 +142,16 @@ class WebDriver2:
                     self.__highlight(elem)
                     return elem
                 else:
-                    time.sleep(1)
+                    time.sleep(0.5)
+                    self.switch_to().default_content()
                     continue
-            except FunctionTimedOut as e:
+            except (FunctionTimedOut, InvalidSelectorException, SyntaxError) as e:
                 if raise_ and i == timeout:
                     raise e
                 self.switch_to().default_content()
-                time.sleep(1)
+                time.sleep(0.5)
 
-    def __ele(self, locator, index=0, timeout=6, raise_: bool = False):
+    def __ele(self, locator, index=0, timeout=5, raise_=False, log_=True):
         """
         Find elements by its location
         :param locator: element location expression
@@ -136,19 +163,22 @@ class WebDriver2:
                 return ele
             else:
                 if raise_:
-                    log.error("☹ ✘ %s" % locator)
+                    if log_:
+                        log.error("☹ ✘ %s" % locator)
                     raise ValueError("Not find element %s, please check locator expression" % locator)
                 else:
-                    log.warn("☹ - %s" % locator)
+                    if log_:
+                        log.error("☹ - %s" % locator)
         elif isinstance(locator, list or tuple):
             for i in locator:
-                ele = self.__find_ele(i, index, timeout=3)
+                ele = self.__find_ele(i, index, timeout=timeout - 1)
                 if ele:
-                    if self.log_:
+                    if log_:
                         log.info("☺ ✔ %s" % i)
                     return ele
                 else:
-                    log.warn("☹ - %s" % i)
+                    if log_:
+                        log.warn("☹ - %s" % i)
                     if locator.index(i) == len(locator) - 1:
                         log.warn("☹ - no right ele in the locator list %s" % locator)
                     else:
@@ -156,24 +186,36 @@ class WebDriver2:
         else:
             raise TypeError("locator must be str or iterable type %s" % locator)
 
-    def click(self, locator, index: int = 0, timeout: int = 6, raise_: bool = False):
+    def click(self,
+              locator, index: int = 0,
+              timeout: int = 6,
+              log_: bool = True,
+              pre_sleep=0,
+              bac_sleep=0,
+              raise_: bool = False):
         """
         click a element by it's locator
         :param locator: Positioning expression
         :param index: If there are more than one, use the first one
         :param timeout: find it in this time or fail
+        :param log_: weather log it
+        :param pre_sleep: sleep before execute
+        :param bac_sleep: sleep after execute
         :param raise_: weather raise exception when it ocur
         Usage:
             driver.click(id=su)
         """
-        elem = self.__ele(locator, index, timeout, raise_)
+        time.sleep(pre_sleep)
+        elem = self.__ele(locator, index, timeout, raise_, log_)
         if elem and isinstance(locator, str) and self.log_:
             log.info("☺ ✔ %s" % locator)
         try:
-            return elem.click()
+            elem.click()
+            time.sleep(bac_sleep)
         except ElementClickInterceptedException:
             try:
                 self.driver.execute_script("arguments[0].click();", elem)
+                time.sleep(bac_sleep)
             except Exception as e:
                 if raise_:
                     raise e
@@ -181,27 +223,51 @@ class WebDriver2:
             if raise_:
                 raise e
 
-    def send_keys(self, locator, value, index: int = 0, timeout: int = 6, clear: bool = False):
+    def send_keys(self,
+                  locator,
+                  value,
+                  index: int = 0,
+                  timeout: int = 6,
+                  clear: bool = True,
+                  pre_sleep=0,
+                  bac_sleep=0,
+                  raise_: bool = False):
         """
         Send value to input box
 
         Usage:
             driver.send_keys("hello", "id=kw")
         """
-        elem = self.__ele(locator, index, timeout)
+        time.sleep(pre_sleep)
+        elem = self.__ele(locator, index, timeout, raise_=raise_)
         if elem:
             if clear:
                 elem.clear()
-            return elem.send_keys(value)
+            elem.send_keys(value)
+            time.sleep(bac_sleep)
         else:
-            raise ValueError("no such elem")
+            if raise_:
+                raise ValueError("ValueError: no such elem - %s" % locator)
+            else:
+                log.error('ValueError: no such elem - %s' % locator)
 
-    def is_displayed(self, locator: str, index: int = 0, timeout: int = 6):
+    def is_displayed(self,
+                     locator: str,
+                     index: int = 0,
+                     timeout: int = 6,
+                     pre_sleep=0,
+                     bac_sleep=0,
+                     raise_: bool = False):
         """
-        weather the element is displayed in html dom, return a bool
+        weather the element is displayed in html dom
         """
-        elem = self.__ele(locator, index, timeout)
-        return elem if elem else False
+        time.sleep(pre_sleep)
+        elem = self.__ele(locator, index, timeout, raise_=raise_)
+        if elem:
+            time.sleep(bac_sleep)
+            return elem
+        else:
+            return False
 
     def is_visible(self, locator: str, timeout: int = 6):
         """
@@ -239,6 +305,26 @@ class WebDriver2:
             height = "0" if not height else height
             js = "window.scrollTo({w},{h});".format(w=str(width), h=height)
             self.driver.execute_script(js)
+
+    def find_element(self, locator, index=0):
+        """
+        find element by locator
+
+        Usage:
+            driver.find_element('//div[text()="seliky"]')
+            driver.find_element('xpath=//div[text()="seliky"]')
+            driver.find_element('id=seliky')
+            driver.find_element('class="seliky"')
+            driver.find_element('partial_link_text="seliky"')
+            ...
+        """
+        return self.__ele(locator, index)
+
+    def find_elements(self, locator, index=0):
+        """
+        see detail in the method of 'def find_element'
+        """
+        return self.find_element(locator, index)
 
     def login_with_cookie(self, before_url, after_url, cookie_path):
         self.driver.get(before_url)
@@ -532,6 +618,14 @@ class WebDriver2:
         elem = self.__ele(locator)
         return elem.location_once_scrolled_into_view()
 
+    def execute_script(self, js=None, *args):
+        """
+        Execute JavaScript scripts.
+        """
+        if js is None:
+            raise ValueError("Please input js script")
+        return self.driver.execute_script(js, *args)
+
     def enter(self, locator):
         elem = self.__ele(locator)
         elem.send_keys(Keys.ENTER)
@@ -580,16 +674,11 @@ class WebDriver2:
         elem = self.__ele(locator)
         elem.send_keys(Keys.SPACE)
 
-    def execute_script(self, js=None, *args):
-        """
-        Execute JavaScript scripts.
-        """
-        if js is None:
-            raise ValueError("Please input js script")
-        return self.driver.execute_script(js, *args)
+    def esc(self):
+        ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
 
     """
-    ==================为了让rf无缝替换====================
+    ================For compatibility with robotframework in seamless replacement================
     """
 
     def click_button(self, locator, index=0):
