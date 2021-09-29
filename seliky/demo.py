@@ -28,7 +28,7 @@ def test_baidu():
         driver.send_keys(p.search_box, i)
         driver.click(p.search_button)
         time.sleep(1)
-        if driver.is_displayed(p.logo, recursion_times=3):
+        if driver.is_displayed(p.logo):
             print('百度搜索ok')
 
     origin_driver = driver.driver  # selenium原生driver

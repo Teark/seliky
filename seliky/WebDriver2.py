@@ -10,10 +10,12 @@ from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
-from seliky import log
+from seliky.log import Log
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+
+log = Log(write_in_file=False)
 
 
 class WebDriver2:
@@ -22,20 +24,15 @@ class WebDriver2:
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    def __init__(self, display: bool = True, log_: bool = True, executable_path: str = ''):
+    def __init__(self,
+                 display: bool = True,
+                 log_: bool = True,
+                 executable_path: str = '',
+                 options: list = '',
+                 experimental_option=''):
         """
         :param display: will be headless show if False
         :param log_: will not show log.info if False
-        """
-        self.display = display
-        self.log_ = log_
-        self.chrome_path = executable_path if 'chrome' in executable_path else 'chromedriver'
-        self.gecko_path = executable_path if 'gecko' in executable_path else "geckodriver"
-
-    def open_browser(self, browser='chrome', options: list = ''):
-        """
-        the first thing to do
-        :param browser: browser
         :param options: for add argument in driver, especial:
             '--headless'
             '--no-sandbox'
@@ -45,10 +42,28 @@ class WebDriver2:
             'blink-settings=imagesEnabled=False'
             'user-agent="MQQBrowser/26 Mozilla/5.0 (Linux; U; Android 2.3.7; zh-cn; MB200 Build/GRJ22; CyanogenMod-7) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1"'
             'user-data-dir=C:\\Users\\Administrator\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache'
+        :param experimental_option: exp:
+            prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': r'd:\'}
+        """
+        self.display = display
+        self.log_ = log_
+        self.chrome_path = executable_path if 'chrome' in executable_path else 'chromedriver'
+        self.gecko_path = executable_path if 'gecko' in executable_path else "geckodriver"
+        self.options = options
+        self.experimental_option = experimental_option
+
+    def open_browser(self, browser='chrome'):
+        """
+        the first thing to do
+        :param browser: browser
         """
         opt = webdriver.ChromeOptions()
-        for i in options:
+        for i in self.options:
             opt.add_argument(i)
+
+        if self.experimental_option:
+            opt.add_experimental_option('prefs', self.experimental_option)
+
         if platform.system().lower() in ["windows", "macos"] and self.display:
             self.driver = webdriver.Chrome(
                 executable_path=self.chrome_path,
@@ -142,14 +157,15 @@ class WebDriver2:
                     self.__highlight(elem)
                     return elem
                 else:
-                    time.sleep(0.5)
+                    time.sleep(0.6)
                     self.switch_to().default_content()
                     continue
-            except (FunctionTimedOut, InvalidSelectorException, SyntaxError) as e:
+            except (FunctionTimedOut, InvalidSelectorException, SyntaxError, IndexError) as e:
+                log.info(e)
                 if raise_ and i == timeout:
                     raise e
                 self.switch_to().default_content()
-                time.sleep(0.5)
+                time.sleep(0.6)
 
     def __ele(self, locator, index=0, timeout=5, raise_=False, log_=True):
         """
@@ -257,12 +273,13 @@ class WebDriver2:
                      timeout: int = 6,
                      pre_sleep=0,
                      bac_sleep=0,
-                     raise_: bool = False):
+                     raise_: bool = False,
+                     log_: bool = True):
         """
         weather the element is displayed in html dom
         """
         time.sleep(pre_sleep)
-        elem = self.__ele(locator, index, timeout, raise_=raise_)
+        elem = self.__ele(locator, index, timeout, raise_=raise_, log_=log_)
         if elem:
             time.sleep(bac_sleep)
             return elem
