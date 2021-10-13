@@ -165,31 +165,25 @@ class WebDriver2:
     def __ele(self, locator, index=0, timeout=5, raise_=False, log_=True):
         """
         Find elements by its location
-        :param locator: element location expression
-        :param index: which one in find list
+        :param log_: log it while false
         """
         if isinstance(locator, str):
             ele = self.__find_ele(locator, index, timeout, raise_)
             if ele:
                 return ele
             else:
+                if log_:
+                    log.error("☹ ✘ %s" % locator)
                 if raise_:
-                    if log_:
-                        log.error("☹ ✘ %s" % locator)
                     raise ValueError("Not find element %s, please check locator expression" % locator)
-                else:
-                    if log_:
-                        log.error("☹ - %s" % locator)
         elif isinstance(locator, list or tuple):
             for i in locator:
                 ele = self.__find_ele(i, index, timeout=timeout - 1)
                 if ele:
                     if log_:
-                        log.info("☺ ✔ %s" % i)
+                        log.warn("☹ - the valid selector is %s, you can remove others in it's list" % i)
                     return ele
                 else:
-                    if log_:
-                        log.warn("☹ - %s" % i)
                     if locator.index(i) == len(locator) - 1:
                         log.warn("☹ - no right ele in the locator list %s" % locator)
                     else:
@@ -204,7 +198,7 @@ class WebDriver2:
         :param locator: Positioning expression
         :param index: If there are more than one, use the first one
         :param timeout: find it in this time or fail
-        :param log_: weather log it
+        :param log_: weather log it while False
         :param pre_sleep: sleep before execute
         :param bac_sleep: sleep after execute
         :param raise_: weather raise exception when it ocur
@@ -213,8 +207,6 @@ class WebDriver2:
         """
         time.sleep(pre_sleep)
         elem = self.__ele(locator, index, timeout, raise_, log_)
-        if elem and isinstance(locator, str) and self.log_:
-            log.info("☺ ✔ %s" % locator)
         try:
             elem.click()
             time.sleep(bac_sleep)
