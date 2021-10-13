@@ -24,12 +24,8 @@ class WebDriver2:
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    def __init__(self,
-                 display: bool = True,
-                 log_: bool = True,
-                 executable_path: str = '',
-                 options: list = '',
-                 experimental_option=''):
+    def __init__(self, display: bool = True, log_: bool = True,
+                 executable_path: str = '', options: list = '', experimental_option=''):
         """
         :param display: will be headless show if False
         :param log_: will not show log.info if False
@@ -161,7 +157,6 @@ class WebDriver2:
                     self.switch_to().default_content()
                     continue
             except (FunctionTimedOut, InvalidSelectorException, SyntaxError, IndexError) as e:
-                log.info(e)
                 if raise_ and i == timeout:
                     raise e
                 self.switch_to().default_content()
@@ -202,13 +197,8 @@ class WebDriver2:
         else:
             raise TypeError("locator must be str or iterable type %s" % locator)
 
-    def click(self,
-              locator, index: int = 0,
-              timeout: int = 6,
-              log_: bool = True,
-              pre_sleep=0,
-              bac_sleep=0,
-              raise_: bool = False):
+    def click(self, locator, index: int = 0, timeout: int = 6, log_: bool = True,
+              pre_sleep=0, bac_sleep=0, raise_: bool = False):
         """
         click a element by it's locator
         :param locator: Positioning expression
@@ -239,15 +229,9 @@ class WebDriver2:
             if raise_:
                 raise e
 
-    def send_keys(self,
-                  locator,
-                  value,
-                  index: int = 0,
-                  timeout: int = 6,
-                  clear: bool = True,
-                  pre_sleep=0,
-                  bac_sleep=0,
-                  raise_: bool = False):
+    def send_keys(self, locator, value,
+                  index: int = 0, timeout: int = 6, clear: bool = True,
+                  pre_sleep=0, bac_sleep=0, raise_: bool = False):
         """
         Send value to input box
 
@@ -267,14 +251,9 @@ class WebDriver2:
             else:
                 log.error('ValueError: no such elem - %s' % locator)
 
-    def is_displayed(self,
-                     locator: str,
-                     index: int = 0,
-                     timeout: int = 6,
-                     pre_sleep=0,
-                     bac_sleep=0,
-                     raise_: bool = False,
-                     log_: bool = True):
+    def is_displayed(self, locator: str, index: int = 0,
+                     timeout: int = 6, pre_sleep=0, bac_sleep=0,
+                     raise_: bool = False, log_: bool = True):
         """
         weather the element is displayed in html dom
         """
@@ -299,24 +278,24 @@ class WebDriver2:
 
     def window_scroll(self, width=None, height=None):
         """
-        Synchronously Executes JavaScript in the current window/frame.
+        Synchronously Executes JavaScript in the current window/frame, and there are more method to achieve
+        self.execute_script("var q=document.documentElement.scrollTop=0")
+        time.sleep(1)
+        self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
+        c = 1
+        while True:
+            time.sleep(0.02)
+            ActionChains(self.driver).send_keys(Keys.UP)
+            c += 1
+            if c >= 100:
+                break
+        self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
+        self.execute_script("var q=document.documentElement.scrollTop=0")
+        self.execute_script("var q=document.body.scrollTop=0")
+        self.execute_script("var q=document.getElementsByClassName('main')[0].scrollTop=0")
         """
         if height is None:
             self.execute_script("var q=document.body.scrollTop=0")
-            # self.execute_script("var q=document.documentElement.scrollTop=0")
-            # time.sleep(1)
-            # self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
-            # c = 1
-            # while True:
-            #     time.sleep(0.02)
-            #     ActionChains(self.driver).send_keys(Keys.UP)
-            #     c += 1
-            #     if c >= 100:
-            #         break
-            # self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
-            # self.execute_script("var q=document.documentElement.scrollTop=0")
-            # self.execute_script("var q=document.body.scrollTop=0")
-            # self.execute_script("var q=document.getElementsByClassName('main')[0].scrollTop=0")
         else:
             width = "0" if not width else width
             height = "0" if not height else height
@@ -343,21 +322,33 @@ class WebDriver2:
         """
         return self.find_element(locator, index)
 
-    def login_with_cookie(self, before_url, after_url, cookie_path):
+    def login_with_cookie(self, before_url: str, after_url: str, cookie_path: str):
         self.driver.get(before_url)
-        with open(cookie_path, "r") as f:
-            ck = f.read()
         time.sleep(1)
-        self.add_cookies(eval(ck))
-        time.sleep(2)
+        self.add_cookies(cookie_path)
+        time.sleep(1)
         self.driver.get(after_url)
 
-    def add_cookies(self, cookie_list):
+    def add_cookies(self, file_path: str):
+        """
+        add cookie from file
+        """
+        with open(file_path, "r") as f:
+            ck = f.read()
+        cookie_list = eval(ck)
         if isinstance(cookie_list, list):
             for cookie in cookie_list:
                 self.driver.add_cookie(cookie)
         else:
-            raise TypeError("Wrong cookie type.")
+            raise TypeError("Wrong cookies type, it must be a list")
+
+    def save_cookies(self, file_path: str):
+        """
+        save cookies in file
+        """
+        ck = self.driver.get_cookies()
+        with open(file_path, 'w') as f:
+            f.write(str(ck))
 
     def alert_is_display(self):
         try:

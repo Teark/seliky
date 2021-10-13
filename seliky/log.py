@@ -9,15 +9,16 @@ import inspect
 import re
 from datetime import datetime
 
-# from colorama import Fore, Style
 
-print("\033[1;32mbeginning at %s ..." % str(datetime.now())[:-7])
+# from colorama import Fore, Style
 
 
 class Log:
     def __init__(self, log_folder=None, write_in_file: bool = True):
         self._logger = logging.getLogger('selek')
         self.write_in_file = write_in_file
+        self.now_time = str(datetime.now())[:-7]
+        print("\033[1;32mbeginning at %s ..." % self.now_time)
 
         if write_in_file:
             log_folder = log_folder if log_folder else self.__call_file_path()
