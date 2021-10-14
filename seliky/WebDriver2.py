@@ -5,7 +5,7 @@ import time
 from func_timeout import func_set_timeout, FunctionTimedOut
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException, WebDriverException, \
-    StaleElementReferenceException, ElementClickInterceptedException, TimeoutException, InvalidSelectorException
+    StaleElementReferenceException, TimeoutException, InvalidSelectorException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -24,11 +24,12 @@ class WebDriver2:
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    def __init__(self, display: bool = True, log_: bool = True,
+    def __init__(self, display: bool = True, log_: bool = False, raise_: bool = True,
                  executable_path: str = '', options: list = '', experimental_option=''):
         """
-        :param display: will be headless show if False
-        :param log_: will not show log.info if False
+        :param display: weather show dynamic, False means headless mode
+        :param log_: weather show log info
+        :param raise_: weather raise error
         :param options: for add argument in driver, especial:
             '--headless'
             '--no-sandbox'
@@ -43,6 +44,7 @@ class WebDriver2:
         """
         self.display = display
         self.log_ = log_
+        self.raise_ = raise_
         self.chrome_path = executable_path if 'chrome' in executable_path else 'chromedriver'
         self.gecko_path = executable_path if 'gecko' in executable_path else "geckodriver"
         self.options = options
@@ -102,8 +104,9 @@ class WebDriver2:
         elems = self.driver.find_elements(by=key, value=vlaue)
         return elems
 
-    def __find_ele(self, locator_, index: int = 0, timeout: int = 5, raise_: bool = False):
+    def __find_ele(self, locator_, index: int = 0, timeout: int = 5, raise_=None):
         time.sleep(0.2)
+        raise_ = self.raise_ if raise_ is None else raise_
         if locator_.startswith("/"):
             by = By.XPATH
             locator_ = locator_
@@ -162,37 +165,41 @@ class WebDriver2:
                 self.switch_to().default_content()
                 time.sleep(0.6)
 
-    def __ele(self, locator, index=0, timeout=5, raise_=False, log_=True):
+    def __ele(self, locator, index=0, timeout=5, raise_=None, log_=None):
         """
         Find elements by its location
         :param log_: log it while false
         """
+        raise_ = self.raise_ if raise_ is None else raise_
+        log_ = self.log_ if log_ is None else log_
         if isinstance(locator, str):
             ele = self.__find_ele(locator, index, timeout, raise_)
             if ele:
+                if log_:
+                    log.info("☺ ✔ %s" % locator)
                 return ele
             else:
-                if log_:
-                    log.error("☹ ✘ %s" % locator)
                 if raise_:
                     raise ValueError("Not find element %s, please check locator expression" % locator)
+                else:
+                    log.error("☹ ✘ %s" % locator)
         elif isinstance(locator, list or tuple):
             for i in locator:
                 ele = self.__find_ele(i, index, timeout=timeout - 1)
                 if ele:
-                    if log_:
-                        log.warn("☹ - the valid selector is %s, you can remove others in it's list" % i)
+                    log.warn("☹ - the valid selector is %s, you can remove others in it's list" % i)
                     return ele
                 else:
                     if locator.index(i) == len(locator) - 1:
-                        log.warn("☹ - no right ele in the locator list %s" % locator)
+                        log.error("☹ ✘ no right ele in the locator list %s" % locator)
+                        return False
                     else:
                         continue
         else:
             raise TypeError("locator must be str or iterable type %s" % locator)
 
-    def click(self, locator, index: int = 0, timeout: int = 6, log_: bool = True,
-              pre_sleep=0, bac_sleep=0, raise_: bool = False):
+    def click(self, locator, index: int = 0, timeout: int = 6, log_: bool = None,
+              pre_sleep=0, bac_sleep=0, raise_: bool = None):
         """
         click a element by it's locator
         :param locator: Positioning expression
@@ -205,31 +212,31 @@ class WebDriver2:
         Usage:
             driver.click(id=su)
         """
+        raise_ = self.raise_ if raise_ is None else raise_
+        log_ = self.log_ if log_ is None else log_
         time.sleep(pre_sleep)
         elem = self.__ele(locator, index, timeout, raise_, log_)
-        try:
-            elem.click()
-            time.sleep(bac_sleep)
-        except ElementClickInterceptedException:
+        if elem:
             try:
-                self.driver.execute_script("arguments[0].click();", elem)
-                time.sleep(bac_sleep)
+                elem.click()
             except Exception as e:
                 if raise_:
                     raise e
-        except Exception as e:
-            if raise_:
-                raise e
+            time.sleep(bac_sleep)
+            return True
+        else:
+            return False
 
     def send_keys(self, locator, value,
                   index: int = 0, timeout: int = 6, clear: bool = True,
-                  pre_sleep=0, bac_sleep=0, raise_: bool = False):
+                  pre_sleep=0, bac_sleep=0, raise_=None):
         """
         Send value to input box
 
         Usage:
             driver.send_keys("hello", "id=kw")
         """
+        raise_ = self.raise_ if raise_ is None else raise_
         time.sleep(pre_sleep)
         elem = self.__ele(locator, index, timeout, raise_=raise_)
         if elem:
@@ -241,16 +248,17 @@ class WebDriver2:
             if raise_:
                 raise ValueError("ValueError: no such elem - %s" % locator)
             else:
-                log.error('ValueError: no such elem - %s' % locator)
+                log.error('no such elem - %s' % locator)
 
     def is_displayed(self, locator: str, index: int = 0,
                      timeout: int = 6, pre_sleep=0, bac_sleep=0,
-                     raise_: bool = False, log_: bool = True):
+                     log_=None):
         """
         weather the element is displayed in html dom
         """
+        log_ = self.log_ if log_ is None else log_
         time.sleep(pre_sleep)
-        elem = self.__ele(locator, index, timeout, raise_=raise_, log_=log_)
+        elem = self.__ele(locator, index, timeout, raise_=False, log_=log_)
         if elem:
             time.sleep(bac_sleep)
             return elem
@@ -267,6 +275,10 @@ class WebDriver2:
             return ele
         except TimeoutException:
             return False
+
+    def click_by_script(self, locator):
+        elem = self.__ele(locator)
+        self.driver.execute_script("arguments[0].click();", elem)
 
     def window_scroll(self, width=None, height=None):
         """
@@ -449,7 +461,7 @@ class WebDriver2:
         Quits the driver and closes every associated window.
         """
         if self.log_:
-            log.info("✌ \nending at %s ..." % log.now_time)
+            log.info("✌ ending...")
         self.driver.quit()
 
     def close(self):
@@ -565,6 +577,9 @@ class WebDriver2:
     def move_to_element(self, locator):
         elem = self.__ele(locator)
         ActionChains(self.driver).move_to_element(elem).perform()
+
+    def hover(self, locator):
+        return self.move_to_element(locator)
 
     def click_and_hold(self, locator):
         elem = self.__ele(locator)
