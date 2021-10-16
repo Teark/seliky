@@ -5,7 +5,8 @@ import time
 from func_timeout import func_set_timeout, FunctionTimedOut
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException, WebDriverException, \
-    StaleElementReferenceException, TimeoutException, InvalidSelectorException
+    StaleElementReferenceException, TimeoutException, InvalidSelectorException, ElementClickInterceptedException, \
+    ElementNotInteractableException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -151,19 +152,22 @@ class WebDriver2:
         for i in range(timeout):
             try:
                 elem = self.__eles(key=by, vlaue=locator_)
-                if elem:
-                    elem = elem[index]  # The first one is selected by default
-                    self.__highlight(elem)
-                    return elem
-                else:
-                    time.sleep(0.6)
+                if not elem:
+                    if i == timeout and raise_:
+                        raise ValueError('no such ele %s' % locator_)
                     self.switch_to().default_content()
+                    time.sleep(0.6)
                     continue
+                if index != 999:
+                    elem = elem[index]  # The first one is selected by default
+                self.__highlight(elem)
+                return elem
             except (FunctionTimedOut, InvalidSelectorException, SyntaxError, IndexError) as e:
                 if raise_ and i == timeout:
                     raise e
                 self.switch_to().default_content()
                 time.sleep(0.6)
+                continue
 
     def __ele(self, locator, index=0, timeout=5, raise_=None, log_=None):
         """
@@ -183,6 +187,7 @@ class WebDriver2:
                     raise ValueError("Not find element %s, please check locator expression" % locator)
                 else:
                     log.error("☹ ✘ %s" % locator)
+                    return None
         elif isinstance(locator, list or tuple):
             for i in locator:
                 ele = self.__find_ele(i, index, timeout=timeout - 1)
@@ -192,7 +197,6 @@ class WebDriver2:
                 else:
                     if locator.index(i) == len(locator) - 1:
                         log.error("☹ ✘ no right ele in the locator list %s" % locator)
-                        return False
                     else:
                         continue
         else:
@@ -219,13 +223,14 @@ class WebDriver2:
         if elem:
             try:
                 elem.click()
-            except Exception as e:
+                time.sleep(bac_sleep)
+                return elem
+            except (ElementClickInterceptedException, ElementNotInteractableException) as e:
                 if raise_:
                     raise e
-            time.sleep(bac_sleep)
-            return True
         else:
-            return False
+            if raise_:
+                raise ValueError('no such ele %s' % locator)
 
     def send_keys(self, locator, value,
                   index: int = 0, timeout: int = 6, clear: bool = True,
@@ -320,18 +325,11 @@ class WebDriver2:
         """
         return self.__ele(locator, index)
 
-    def find_elements(self, locator, index=0):
+    def find_elements(self, locator):
         """
-        see detail in the method of 'def find_element'
+        find a list of ele
         """
-        return self.find_element(locator, index)
-
-    def login_with_cookie(self, before_url: str, after_url: str, cookie_path: str):
-        self.driver.get(before_url)
-        time.sleep(1)
-        self.add_cookies(cookie_path)
-        time.sleep(1)
-        self.driver.get(after_url)
+        return self.__ele(locator, 999)
 
     def add_cookies(self, file_path: str):
         """
