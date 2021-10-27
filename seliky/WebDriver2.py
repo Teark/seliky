@@ -1,5 +1,8 @@
 import os
 import platform
+import subprocess
+from functools import reduce
+
 import time
 
 from func_timeout import func_set_timeout, FunctionTimedOut
@@ -53,8 +56,7 @@ class WebDriver2:
 
     def open_browser(self, browser='chrome'):
         """
-        the first thing to do
-        :param browser: browser
+        open a browser, default open chrome browser
         """
         opt = webdriver.ChromeOptions()
         for i in self.options:
@@ -156,7 +158,7 @@ class WebDriver2:
                     if i == timeout and raise_:
                         raise ValueError('no such ele %s' % locator_)
                     self.switch_to().default_content()
-                    time.sleep(0.6)
+                    time.sleep(0.8)
                     continue
                 if index != 999:
                     elem = elem[index]  # The first one is selected by default
@@ -169,10 +171,9 @@ class WebDriver2:
                 time.sleep(0.6)
                 continue
 
-    def __ele(self, locator, index=0, timeout=5, raise_=None, log_=None):
+    def __ele(self, locator, index=0, timeout=5, raise_=None, log_=None, log_when_fail=True):
         """
         Find elements by its location
-        :param log_: log it while false
         """
         raise_ = self.raise_ if raise_ is None else raise_
         log_ = self.log_ if log_ is None else log_
@@ -186,8 +187,8 @@ class WebDriver2:
                 if raise_:
                     raise ValueError("Not find element %s, please check locator expression" % locator)
                 else:
-                    log.error("☹ ✘ %s" % locator)
-                    return None
+                    if log_when_fail:
+                        log.error("☹ ✘ %s" % locator)
         elif isinstance(locator, list or tuple):
             for i in locator:
                 ele = self.__find_ele(i, index, timeout=timeout - 1)
@@ -234,7 +235,7 @@ class WebDriver2:
 
     def send_keys(self, locator, value,
                   index: int = 0, timeout: int = 6, clear: bool = True,
-                  pre_sleep=0, bac_sleep=0, raise_=None):
+                  pre_sleep=0, bac_sleep=0, raise_=None, enter=False):
         """
         Send value to input box
 
@@ -248,6 +249,8 @@ class WebDriver2:
             if clear:
                 elem.clear()
             elem.send_keys(value)
+            if enter:
+                elem.send_keys(Keys.ENTER)
             time.sleep(bac_sleep)
         else:
             if raise_:
@@ -255,15 +258,52 @@ class WebDriver2:
             else:
                 log.error('no such elem - %s' % locator)
 
+    def upload(self, file_path: str, uploader: str, timeout=5, is_esc=False):
+        """
+        After wake-up system upload pop-up window，Call this method to upload files
+        this is au3 script by autoit:
+        >>>
+        upload()
+        Func upload()
+            ;聚焦到指定窗口
+            ControlFocus("打开","","Edit1")
+            ;暂停脚本执行直到指定窗口存在
+            WinWait("[CLASS:#32770]","",3000)
+            ;设定指定控件的文本
+            ControlSetText("打开", "", "Edit1", $CmdLine[1])
+            ;设定延迟
+            Sleep(1500)
+            ;点击指定控件
+            ControlClick("打开", "","Button1")
+
+            ;若找不到文件，点击弹窗里的确认，再点击取消
+            If WinWait("打开", "", "Button1", 2000) then
+                ControlClick("打开", "", "Button1")
+                Sleep(1000)
+                ControlClick("打开", "", "Button2")
+            EndIf
+        EndFunc
+        """
+        params = [uploader, file_path]
+        interpret_code = reduce(lambda a, b: '{0} {1}'.format(str(a), '"{}"'.format(str(b))), params)
+        time.sleep(1)
+        p = subprocess.Popen(interpret_code)
+        time.sleep(timeout)
+        try:
+            p.wait(timeout)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            time.sleep(1)
+        if is_esc:
+            self.esc()
+
     def is_displayed(self, locator: str, index: int = 0,
-                     timeout: int = 6, pre_sleep=0, bac_sleep=0,
-                     log_=None):
+                     timeout: int = 6, pre_sleep=0, bac_sleep=0):
         """
         weather the element is displayed in html dom
         """
-        log_ = self.log_ if log_ is None else log_
         time.sleep(pre_sleep)
-        elem = self.__ele(locator, index, timeout, raise_=False, log_=log_)
+        elem = self.__ele(locator, index, timeout, raise_=False, log_when_fail=False)
         if elem:
             time.sleep(bac_sleep)
             return elem
@@ -352,6 +392,10 @@ class WebDriver2:
         with open(file_path, 'w') as f:
             f.write(str(ck))
 
+    def set_attribute(self, locator: str, attribute: str, value):
+        elem = self.__ele(locator)
+        self.driver.execute_script("arguments[0].setAttribute(arguments[1],arguments[2])", elem, attribute, value)
+
     def alert_is_display(self):
         try:
             self.driver.switch_to.alert
@@ -377,16 +421,14 @@ class WebDriver2:
     def release(self):
         ActionChains(self.driver).release().perform()
 
-    def text(self, locator, index=0):
+    def text(self, locator, index=0, timeout=6):
         """
         The text of the element
-        :param locator: Positioning expression
-        :param index: If there are more than one, use the first one
 
         Usage:
             driver.text(id=su)
         """
-        elem = self.__ele(locator, index)
+        elem = self.__ele(locator, index, timeout=timeout)
         return elem.text
 
     def clear(self, locator, index=0):
@@ -404,7 +446,8 @@ class WebDriver2:
         """
         whether the element is selected, return a bool, Can be used to check if a checkbox or radio button is selected.
         To reader:
-        This kind of judgment will be added to judge whether or not. Why not add others? It will report an error, but whether to return yes or no instead of returning an error
+        This kind of judgment will be added to judge whether or not. Why not add others?
+        It will report an error, but whether to return yes or no instead of returning an error
         """
         elem = self.__ele(locator, index)
         if elem:
@@ -421,7 +464,7 @@ class WebDriver2:
 
     def get(self, uri):
         """
-        Request a page, which is the first thing you have to do
+        Request a page
         :param uri: url of the page
 
         Usage:
@@ -716,6 +759,13 @@ class WebDriver2:
         elem = self.__ele(locator)
         return elem.text
 
+    def get_value(self, locator: str):
+        elem = self.__ele(locator)
+        value = elem.get_attribute('value')
+        if not value:
+            value = elem.text
+        return value
+
     def get_title(self):
         return self.title()
 
@@ -727,3 +777,33 @@ class WebDriver2:
 
     def input_text(self, locator: str, value: str, clear: bool = True):
         return self.send_keys(value, locator, clear)
+
+    def wait_until_element_contains(self, locator: str, text: str, timeout=10):
+        ele_text = self.text(locator, timeout=timeout)
+        if text in ele_text:
+            return True
+        else:
+            return False
+
+    def element_should_be_visible(self, locator: str, timeout=10):
+        return self.is_visible(locator, timeout=timeout)
+
+    def element_should_be_contain(self, locator: str, expected: str):
+        elem = self.__ele(locator)
+        if expected in elem.text:
+            return True
+        else:
+            return False
+
+    def element_should_not_be_visible(self, locator: str, timeout=10):
+        return not self.is_visible(locator, timeout=timeout)
+
+    def element_text_should_be(self, locator: str, expected: str):
+        return self.element_should_be_contain(locator, expected)
+
+    def focus(self, locator: str):
+        return self.__ele(locator)
+
+    def get_alert_message(self):
+        message = self.driver.switch_to.alert
+        return message.text
