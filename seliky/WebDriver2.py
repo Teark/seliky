@@ -28,12 +28,11 @@ class WebDriver2:
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    def __init__(self, display: bool = True, log_: bool = False, raise_: bool = True,
+    def __init__(self, display: bool = True, log_: bool = False,
                  executable_path: str = '', options: list = '', experimental_option=''):
         """
         :param display: weather show dynamic, False means headless mode
         :param log_: weather show log info
-        :param raise_: weather raise error
         :param options: for add argument in driver, especial:
             '--headless'
             '--no-sandbox'
@@ -48,7 +47,6 @@ class WebDriver2:
         """
         self.display = display
         self.log_ = log_
-        self.raise_ = raise_
         self.chrome_path = executable_path if 'chrome' in executable_path else 'chromedriver'
         self.gecko_path = executable_path if 'gecko' in executable_path else "geckodriver"
         self.options = options
@@ -107,9 +105,8 @@ class WebDriver2:
         elems = self.driver.find_elements(by=key, value=vlaue)
         return elems
 
-    def __find_ele(self, locator_, index: int = 0, timeout: int = 5, raise_=None):
+    def __find_ele(self, locator_, index: int = 0, timeout: int = 5, raise_=True):
         time.sleep(0.2)
-        raise_ = self.raise_ if raise_ is None else raise_
         if locator_.startswith("/"):
             by = By.XPATH
             locator_ = locator_
@@ -171,11 +168,10 @@ class WebDriver2:
                 time.sleep(0.6)
                 continue
 
-    def __ele(self, locator, index=0, timeout=5, raise_=None, log_=None, log_when_fail=True):
+    def __ele(self, locator, index=0, timeout=5, raise_=True, log_=None, log_when_fail=True):
         """
         Find elements by its location
         """
-        raise_ = self.raise_ if raise_ is None else raise_
         log_ = self.log_ if log_ is None else log_
         if isinstance(locator, str):
             ele = self.__find_ele(locator, index, timeout, raise_)
@@ -204,7 +200,7 @@ class WebDriver2:
             raise TypeError("locator must be str or iterable type %s" % locator)
 
     def click(self, locator, index: int = 0, timeout: int = 6, log_: bool = None,
-              pre_sleep=0, bac_sleep=0, raise_: bool = None):
+              pre_sleep=0, bac_sleep=0, raise_: bool = True):
         """
         click a element by it's locator
         :param locator: Positioning expression
@@ -217,7 +213,6 @@ class WebDriver2:
         Usage:
             driver.click(id=su)
         """
-        raise_ = self.raise_ if raise_ is None else raise_
         log_ = self.log_ if log_ is None else log_
         time.sleep(pre_sleep)
         elem = self.__ele(locator, index, timeout, raise_, log_)
@@ -228,6 +223,7 @@ class WebDriver2:
                 return elem
             except (ElementClickInterceptedException, ElementNotInteractableException) as e:
                 if raise_:
+                    log.error('click failed %s, reason belows' % locator)
                     raise e
         else:
             if raise_:
@@ -235,14 +231,13 @@ class WebDriver2:
 
     def send_keys(self, locator, value,
                   index: int = 0, timeout: int = 6, clear: bool = True,
-                  pre_sleep=0, bac_sleep=0, raise_=None, enter=False):
+                  pre_sleep=0, bac_sleep=0, raise_=True, enter=False):
         """
         Send value to input box
 
         Usage:
             driver.send_keys("hello", "id=kw")
         """
-        raise_ = self.raise_ if raise_ is None else raise_
         time.sleep(pre_sleep)
         elem = self.__ele(locator, index, timeout, raise_=raise_)
         if elem:
@@ -615,12 +610,15 @@ class WebDriver2:
         elem = self.__ele(locator)
         return elem.get_property(name)
 
-    def move_to_element(self, locator):
+    def move_to_element(self, locator, click=False):
         elem = self.__ele(locator)
-        ActionChains(self.driver).move_to_element(elem).perform()
+        if click:
+            ActionChains(self.driver).move_to_element(elem).perform()
+        else:
+            ActionChains(self.driver).move_to_element(elem)
 
     def hover(self, locator):
-        return self.move_to_element(locator)
+        return self.move_to_element(locator, click=False)
 
     def click_and_hold(self, locator):
         elem = self.__ele(locator)
