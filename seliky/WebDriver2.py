@@ -15,7 +15,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 from seliky.log import Log
-
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
@@ -40,23 +41,39 @@ class WebDriver2:
             '--disable-dev-shm-usage'
             'window-size=1920x1080'
             'blink-settings=imagesEnabled=False'
-            'user-agent="MQQBrowser/26 Mozilla/5.0 (Linux; U; Android 2.3.7; zh-cn; MB200 Build/GRJ22; CyanogenMod-7) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1"'
+            'user-agent="MQQBrowser/26 Mozilla/5.0 ..."'
             'user-data-dir=C:\\Users\\Administrator\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache'
         :param experimental_option: exp:
-            prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': r'd:\'}
+            prefs =
+            {'profile.managed_default_content_settings.images': 2,
+            'profile.default_content_settings.popups': 0,
+             'download.default_directory': r'd:\'}
         """
+        self.executable_path = executable_path
         self.display = display
         self.log_ = log_
-        self.chrome_path = executable_path if 'chrome' in executable_path else 'chromedriver'
-        self.gecko_path = executable_path if 'gecko' in executable_path else "geckodriver"
+        if 'chrome' in executable_path:
+            self.chrome_path = executable_path
+        else:
+            self.chrome_path = 'chromedriver'
+        if 'gecko' in executable_path:
+            self.gecko_path = executable_path
+        else:
+            self.gecko_path = "geckodriver"
         self.options = options
         self.experimental_option = experimental_option
 
-    def open_browser(self, browser='chrome'):
+    def open_browser(self):
         """
         open a browser, default open chrome browser
         """
-        opt = webdriver.ChromeOptions()
+        browser_type = 'chrome'
+        if 'chrome' in self.executable_path:
+            opt = ChromeOptions()
+        else:
+            browser_type = 'firefox'
+            opt = FirefoxOptions()
+
         for i in self.options:
             opt.add_argument(i)
 
@@ -67,19 +84,17 @@ class WebDriver2:
             self.driver = webdriver.Chrome(
                 executable_path=self.chrome_path,
                 chrome_options=opt
-            ) if browser == 'chrome' else webdriver.Firefox(
-                executable_path=self.gecko_path, service_log_path=os.devnull
-            ) if browser == 'firefox' else webdriver.Ie() if browser == 'ie' else webdriver.Safari(
-            ) if browser == 'safari' else webdriver.Chrome(
-                executable_path=self.chrome_path,
-                chrome_options=opt
+            ) if browser_type == 'chrome' else webdriver.Firefox(
+                executable_path=self.gecko_path,
+                firefox_options=opt,
+                service_log_path=os.devnull
             )
             self.driver.maximize_window()
-        else:
-            options = webdriver.ChromeOptions()
+
+        else:  # devops platform
             for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
-                options.add_argument(i)
-            self.driver = webdriver.Chrome(executable_path=self.chrome_path, options=options)
+                opt.add_argument(i)
+            self.driver = webdriver.Chrome(executable_path=self.chrome_path, options=opt)
         return self.driver
 
     def __highlight(self, ele):
@@ -253,7 +268,7 @@ class WebDriver2:
             else:
                 log.error('no such elem - %s' % locator)
 
-    def upload(self, file_path: str, uploader: str, timeout=5, is_esc=False):
+    def upload(self, locator: str, file_path: str, uploader=None, timeout=5, is_esc=False, autoit=False):
         """
         After wake-up system upload pop-up window，Call this method to upload files
         this is au3 script by autoit:
@@ -279,18 +294,28 @@ class WebDriver2:
             EndIf
         EndFunc
         """
-        params = [uploader, file_path]
-        interpret_code = reduce(lambda a, b: '{0} {1}'.format(str(a), '"{}"'.format(str(b))), params)
-        time.sleep(1)
-        p = subprocess.Popen(interpret_code)
-        time.sleep(timeout)
-        try:
-            p.wait(timeout)
-        except subprocess.TimeoutExpired:
-            p.kill()
-            time.sleep(1)
-        if is_esc:
-            self.esc()
+        if autoit:
+            if not uploader:
+                raise ValueError('please make a uploader')
+            params = [uploader, file_path]
+            interpret_code = reduce(lambda a, b: '{0} {1}'.format(str(a), '"{}"'.format(str(b))), params)
+            time.sleep(0.5)
+            p = subprocess.Popen(interpret_code)
+            time.sleep(timeout)
+            try:
+                p.wait(timeout)
+            except subprocess.TimeoutExpired:
+                p.kill()
+                time.sleep(1)
+            if is_esc:
+                self.esc()
+        else:
+            elem = self.__ele(locator, 0, 5)
+            if elem:
+                elem.send_keys(file_path)
+                time.sleep(timeout)
+            else:
+                raise ValueError("ValueError: no such elem - %s" % locator)
 
     def is_displayed(self, locator: str, index: int = 0,
                      timeout: int = 6, pre_sleep=0, bac_sleep=0):
@@ -450,12 +475,17 @@ class WebDriver2:
         else:
             return False
 
-    def is_enable(self, locator, index=0):
+    def is_enable(self, locator, index=0, timeout=6):
+        """
+        weather clickable
+        """
         elem = self.__ele(locator, index)
-        if elem:
-            return elem.is_enabled()
-        else:
-            return False
+        for i in range(timeout):
+            flag = elem.is_enabled()
+            if not flag:
+                time.sleep(0.9)
+            else:
+                return flag
 
     def get(self, uri):
         """
@@ -712,12 +742,22 @@ class WebDriver2:
         else:
             elem.send_keys(Keys.CONTROL, "v")
 
-    def backspace(self, locator):
+    def backspace(self, locator, empty: bool = True):
         elem = self.__ele(locator)
+        if empty:
+            if platform.system().lower() == "darwin":
+                elem.send_keys(Keys.COMMAND, "a")
+            else:
+                elem.send_keys(Keys.CONTROL, "a")
         elem.send_keys(Keys.BACKSPACE)
 
-    def delete(self, locator):
+    def delete(self, locator, empty: bool = True):
         elem = self.__ele(locator)
+        if empty:
+            if platform.system().lower() == "darwin":
+                elem.send_keys(Keys.COMMAND, "a")
+            else:
+                elem.send_keys(Keys.CONTROL, "a")
         elem.send_keys(Keys.DELETE)
 
     def tab(self, locator):
