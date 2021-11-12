@@ -8,8 +8,7 @@ import time
 from func_timeout import func_set_timeout, FunctionTimedOut
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException, WebDriverException, \
-    StaleElementReferenceException, TimeoutException, InvalidSelectorException, ElementClickInterceptedException, \
-    ElementNotInteractableException
+    StaleElementReferenceException, TimeoutException, InvalidSelectorException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -232,14 +231,17 @@ class WebDriver2:
         time.sleep(pre_sleep)
         elem = self.__ele(locator, index, timeout, raise_, log_)
         if elem:
-            try:
-                elem.click()
-                time.sleep(bac_sleep)
-                return elem
-            except (ElementClickInterceptedException, ElementNotInteractableException) as e:
-                if raise_:
-                    log.error('click failed %s, reason belows' % locator)
-                    raise e
+            for i in range(2):
+                try:
+                    time.sleep(0.1)
+                    elem.click()
+                    time.sleep(bac_sleep)
+                    return elem
+                except Exception as e:
+                    time.sleep(0.5)
+                    if raise_ and i > 1:
+                        log.error('click failed %s, reason belows' % locator)
+                        raise e
         else:
             if raise_:
                 raise ValueError('no such ele %s' % locator)
