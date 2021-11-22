@@ -29,7 +29,7 @@ class WebDriver2:
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
     def __init__(self, display: bool = True, log_: bool = False,
-                 executable_path: str = '', options: list = '', experimental_option=''):
+                 executable_path: str = 'chromedriver', options: list = '', experimental_option=''):
         """
         :param display: weather show dynamic, False means headless mode
         :param log_: weather show log info
@@ -48,26 +48,18 @@ class WebDriver2:
             'profile.default_content_settings.popups': 0,
              'download.default_directory': r'd:\'}
         """
-        self.executable_path = executable_path
         self.display = display
         self.log_ = log_
-        if 'chrome' in executable_path:
-            self.chrome_path = executable_path
-        else:
-            self.chrome_path = 'chromedriver'
-        if 'gecko' in executable_path:
-            self.gecko_path = executable_path
-        else:
-            self.gecko_path = "geckodriver"
         self.options = options
         self.experimental_option = experimental_option
+        self.executable_path = executable_path
 
     def open_browser(self):
         """
         open a browser, default open chrome browser
         """
-        browser_type = 'chrome'
         if 'chrome' in self.executable_path:
+            browser_type = 'chrome'
             opt = ChromeOptions()
         else:
             browser_type = 'firefox'
@@ -81,11 +73,11 @@ class WebDriver2:
 
         if platform.system().lower() in ["windows", "macos"] and self.display:
             self.driver = webdriver.Chrome(
-                executable_path=self.chrome_path,
-                chrome_options=opt
+                executable_path=self.executable_path,
+                options=opt
             ) if browser_type == 'chrome' else webdriver.Firefox(
-                executable_path=self.gecko_path,
-                firefox_options=opt,
+                executable_path=self.executable_path,
+                options=opt,
                 service_log_path=os.devnull
             )
             self.driver.maximize_window()
@@ -93,7 +85,7 @@ class WebDriver2:
         else:  # devops platform
             for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
                 opt.add_argument(i)
-            self.driver = webdriver.Chrome(executable_path=self.chrome_path, options=opt)
+            self.driver = webdriver.Chrome(executable_path=self.executable_path, options=opt)
         return self.driver
 
     def __highlight(self, ele):
