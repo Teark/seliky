@@ -2,9 +2,7 @@ import os
 import platform
 import subprocess
 from functools import reduce
-
 import time
-
 from func_timeout import func_set_timeout, FunctionTimedOut
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException, WebDriverException, \
@@ -262,7 +260,7 @@ class WebDriver2:
             else:
                 log.error('no such elem - %s' % locator)
 
-    def upload(self, locator: str, file_path: str, uploader=None, timeout=5, is_esc=False, autoit=False):
+    def upload(self, file_path: str, locator: str = '', uploader=None, timeout=5, is_esc=False, autoit=False):
         """
         After wake-up system upload pop-up window，Call this method to upload files
         this is au3 script by autoit:
@@ -288,6 +286,9 @@ class WebDriver2:
             EndIf
         EndFunc
         """
+        if any([locator, uploader]):
+            raise ValueError('locator or uploader choose once')
+
         if autoit:
             if not uploader:
                 raise ValueError('please make a uploader')
@@ -762,78 +763,3 @@ class WebDriver2:
 
     def esc(self):
         ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
-
-    """
-    ================For compatibility with robotframework in seamless replacement================
-    """
-
-    def click_button(self, locator, index=0):
-        return self.click(locator, index)
-
-    def click_element(self, locator, index=0):
-        return self.click(locator, index)
-
-    def click_image(self, locator, index=0):
-        return self.click(locator, index)
-
-    def click_link(self, locator, index=0):
-        return self.click(locator, index)
-
-    def close_browser(self):
-        return self.quit()
-
-    def close_window(self):
-        return self.close()
-
-    def get_text(self, locator):
-        elem = self.__ele(locator)
-        return elem.text
-
-    def get_value(self, locator: str):
-        elem = self.__ele(locator)
-        value = elem.get_attribute('value')
-        if not value:
-            value = elem.text
-        return value
-
-    def get_title(self):
-        return self.title()
-
-    def go_to(self, uri):
-        return self.get(uri)
-
-    def input_password(self, locator: str, value: str, clear: bool = True):
-        return self.send_keys(value, locator, clear)
-
-    def input_text(self, locator: str, value: str, clear: bool = True):
-        return self.send_keys(value, locator, clear)
-
-    def wait_until_element_contains(self, locator: str, text: str, timeout=10):
-        ele_text = self.text(locator, timeout=timeout)
-        if text in ele_text:
-            return True
-        else:
-            return False
-
-    def element_should_be_visible(self, locator: str, timeout=10):
-        return self.is_visible(locator, timeout=timeout)
-
-    def element_should_be_contain(self, locator: str, expected: str):
-        elem = self.__ele(locator)
-        if expected in elem.text:
-            return True
-        else:
-            return False
-
-    def element_should_not_be_visible(self, locator: str, timeout=10):
-        return not self.is_visible(locator, timeout=timeout)
-
-    def element_text_should_be(self, locator: str, expected: str):
-        return self.element_should_be_contain(locator, expected)
-
-    def focus(self, locator: str):
-        return self.__ele(locator)
-
-    def get_alert_message(self):
-        message = self.driver.switch_to.alert
-        return message.text
