@@ -412,11 +412,9 @@ class WebDriver2:
 
     def alert_is_display(self):
         try:
-            self.driver.switch_to.alert
+            return self.driver.switch_to.alert
         except NoAlertPresentException:
             return False
-        else:
-            return True
 
     def move_by_offset(self, x, y, click=False):
         if click is True:
@@ -694,7 +692,7 @@ class WebDriver2:
 
     def location_once_scrolled_into_view(self, locator):
         elem = self.__ele(locator)
-        return elem.location_once_scrolled_into_view()
+        return elem.location_once_scrolled_into_view
 
     def execute_script(self, js=None, *args):
         """

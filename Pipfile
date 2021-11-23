@@ -5,13 +5,9 @@ name = "pypi"
 
 [packages]
 selenium = "*"
-colorama = "*"
-pyvirtualdisplay = "*"
-natsort = "*"
-xlutils = "*"
-poium = "*"
+func-timeout = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.7"
+python_version = "3.10"
