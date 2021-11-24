@@ -219,9 +219,9 @@ class WebDriver2:
         """
         log_ = self.log_ if log_ is None else log_
         time.sleep(pre_sleep)
-        elem = self.__ele(locator, index, timeout, raise_, log_)
-        if elem:
-            for i in range(2):
+        for i in range(2):
+            elem = self.__ele(locator, index, timeout, raise_, log_)
+            if elem:
                 try:
                     time.sleep(0.1)
                     elem.click()
@@ -232,8 +232,7 @@ class WebDriver2:
                     if raise_ and i > 1:
                         log.error('click failed %s, reason belows' % locator)
                         raise e
-        else:
-            if raise_:
+            elif i == 1 and raise_:
                 raise ValueError('no such ele %s' % locator)
 
     def send_keys(self, locator, value,
@@ -260,7 +259,19 @@ class WebDriver2:
             else:
                 log.error('no such elem - %s' % locator)
 
-    def upload(self, file_path: str, locator: str = '', uploader=None, timeout=5, is_esc=False, autoit=False):
+    def upload(self, locator: str, file_path: str, timeout=5):
+        """
+        upload in traditional way: send files to input label
+        """
+        elem = self.__ele(locator, 0, 5)
+        if elem:
+            elem.send_keys(file_path)
+            time.sleep(timeout)
+        else:
+            raise ValueError("ValueError: no such elem - %s" % locator)
+
+    @staticmethod
+    def upload_with_autoit(file_path: str, uploader, timeout=5):
         """
         After wake-up system upload pop-up window，Call this method to upload files
         this is au3 script by autoit:
@@ -286,31 +297,16 @@ class WebDriver2:
             EndIf
         EndFunc
         """
-        if any([locator, uploader]):
-            raise ValueError('locator or uploader choose once')
-
-        if autoit:
-            if not uploader:
-                raise ValueError('please make a uploader')
-            params = [uploader, file_path]
-            interpret_code = reduce(lambda a, b: '{0} {1}'.format(str(a), '"{}"'.format(str(b))), params)
-            time.sleep(0.5)
-            p = subprocess.Popen(interpret_code)
+        params = [uploader, file_path]
+        interpret_code = reduce(lambda a, b: '{0} {1}'.format(str(a), '"{}"'.format(str(b))), params)
+        time.sleep(0.5)
+        p = subprocess.Popen(interpret_code)
+        try:
+            p.wait(timeout)
+        except subprocess.TimeoutExpired:
+            p.kill()
+        finally:
             time.sleep(timeout)
-            try:
-                p.wait(timeout)
-            except subprocess.TimeoutExpired:
-                p.kill()
-                time.sleep(1)
-            if is_esc:
-                self.esc()
-        else:
-            elem = self.__ele(locator, 0, 5)
-            if elem:
-                elem.send_keys(file_path)
-                time.sleep(timeout)
-            else:
-                raise ValueError("ValueError: no such elem - %s" % locator)
 
     def is_displayed(self, locator: str, index: int = 0,
                      timeout: int = 6, pre_sleep=0, bac_sleep=0):
