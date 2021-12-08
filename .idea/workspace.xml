@@ -3,6 +3,9 @@
   <component name="ChangeListManager">
     <list default="true" id="5e16fa1b-8ccb-442e-9069-b1e08433aa80" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/seliky/WebDriver2.py" beforeDir="false" afterPath="$PROJECT_DIR$/seliky/WebDriver2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -91,6 +94,16 @@
       <workItem from="1637637412292" duration="736000" />
       <workItem from="1637652203733" duration="1151000" />
       <workItem from="1637717915660" duration="1699000" />
+      <workItem from="1637802473076" duration="15000" />
+      <workItem from="1637802499472" duration="5000" />
+      <workItem from="1637919483472" duration="1943000" />
+      <workItem from="1638350324645" duration="956000" />
+      <workItem from="1638351629549" duration="8000" />
+      <workItem from="1638783553402" duration="346000" />
+      <workItem from="1638927597873" duration="317000" />
+      <workItem from="1638927996434" duration="44000" />
+      <workItem from="1638928224211" duration="161000" />
+      <workItem from="1638928419111" duration="312000" />
     </task>
     <servers />
   </component>

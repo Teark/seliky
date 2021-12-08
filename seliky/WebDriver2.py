@@ -271,40 +271,24 @@ class WebDriver2:
             raise ValueError("ValueError: no such elem - %s" % locator)
 
     @staticmethod
-    def upload_with_autoit(file_path: str, uploader, timeout=5):
+    def upload_with_autoit(file_path: str, uploader, timeout=6):
         """
         After wake-up system upload pop-up window，Call this method to upload files
         this is au3 script by autoit:
-        >>>
-        upload()
-        Func upload()
-            ;聚焦到指定窗口
-            ControlFocus("打开","","Edit1")
-            ;暂停脚本执行直到指定窗口存在
-            WinWait("[CLASS:#32770]","",3000)
-            ;设定指定控件的文本
-            ControlSetText("打开", "", "Edit1", $CmdLine[1])
-            ;设定延迟
-            Sleep(1500)
-            ;点击指定控件
-            ControlClick("打开", "","Button1")
-
-            ;若找不到文件，点击弹窗里的确认，再点击取消
-            If WinWait("打开", "", "Button1", 2000) then
-                ControlClick("打开", "", "Button1")
-                Sleep(1000)
-                ControlClick("打开", "", "Button2")
-            EndIf
-        EndFunc
         """
         params = [uploader, file_path]
         interpret_code = reduce(lambda a, b: '{0} {1}'.format(str(a), '"{}"'.format(str(b))), params)
         time.sleep(0.5)
-        p = subprocess.Popen(interpret_code)
+        sub_pop = 0
         try:
-            p.wait(timeout)
+            sub_pop = subprocess.Popen(interpret_code)
+        except FileNotFoundError:
+            log.error("上传器路径没找到")
+        try:
+            sub_pop.wait(timeout)
         except subprocess.TimeoutExpired:
-            p.kill()
+            if sub_pop:
+                sub_pop.kill()
         finally:
             time.sleep(timeout)
 
@@ -595,6 +579,10 @@ class WebDriver2:
         """
         Switches focus to the specified window.
         """
+        if handle == 0:
+            handle = self.driver.window_handles[0]
+        elif handle == 1:
+            handle = self.driver.window_handles[1]
         self.driver.switch_to.window(handle)
 
     def dismiss_alert(self):
@@ -675,17 +663,17 @@ class WebDriver2:
         else:
             raise TimeoutError("element is not attached to the page document.")
 
-    def select_by_value(self, locator, value):
-        select_elem = self.__ele(locator)
-        Select(select_elem).select_by_value(value)
+    @staticmethod
+    def select_by_value(elem, value):
+        Select(elem).select_by_value(value)
 
-    def select_by_index(self, locator, index):
-        select_elem = self.__ele(locator)
-        Select(select_elem).select_by_index(index)
+    @staticmethod
+    def select_by_index(elem, index):
+        Select(elem).select_by_index(index)
 
-    def select_by_visible_text(self, locator, text):
-        select_elem = self.__ele(locator)
-        Select(select_elem).select_by_visible_text(text)
+    @staticmethod
+    def select_by_visible_text(elem, text):
+        Select(elem).select_by_visible_text(text)
 
     def location_once_scrolled_into_view(self, locator):
         elem = self.__ele(locator)
