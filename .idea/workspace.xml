@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5e16fa1b-8ccb-442e-9069-b1e08433aa80" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/seliky.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/seliky.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Pipfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Pipfile.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/seliky/WebDriver2.py" beforeDir="false" afterPath="$PROJECT_DIR$/seliky/WebDriver2.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
     </list>
@@ -103,7 +104,8 @@
       <workItem from="1638927597873" duration="317000" />
       <workItem from="1638927996434" duration="44000" />
       <workItem from="1638928224211" duration="161000" />
-      <workItem from="1638928419111" duration="312000" />
+      <workItem from="1638928419111" duration="555000" />
+      <workItem from="1640572455705" duration="655000" />
     </task>
     <servers />
   </component>

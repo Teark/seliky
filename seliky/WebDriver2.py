@@ -94,11 +94,11 @@ class WebDriver2:
         if self.display:
             try:
                 for _ in range(2):
-                    self.driver.execute_script('arguments[0].style.border="2px solid #FF0000"', ele)
+                    self.driver.execute_script('arguments[0].style.border="2px solid #87CECB"', ele)
                     time.sleep(0.1)
-                    self.driver.execute_script('arguments[0].style.border="2px solid #00FF00"', ele)
+                    self.driver.execute_script('arguments[0].style.border="2px solid #FF00FF"', ele)
                     time.sleep(0.1)
-                self.driver.execute_script('arguments[0].style.border="2px solid #00FF00"', ele)
+                self.driver.execute_script('arguments[0].style.border="2px solid #FF00FF"', ele)
                 time.sleep(0.5)
                 self.driver.execute_script('arguments[0].style.border=""', ele)
             except WebDriverException:
@@ -204,7 +204,7 @@ class WebDriver2:
             raise TypeError("locator must be str or iterable type %s" % locator)
 
     def click(self, locator, index: int = 0, timeout: int = 6, log_: bool = None,
-              pre_sleep=0, bac_sleep=0, raise_: bool = True):
+              pre_sleep=0.1, bac_sleep=0.1, raise_: bool = True):
         """
         click a element by it's locator
         :param locator: Positioning expression
@@ -316,9 +316,17 @@ class WebDriver2:
         except TimeoutException:
             return False
 
-    def click_by_script(self, locator):
-        elem = self.__ele(locator)
-        self.driver.execute_script("arguments[0].click();", elem)
+    def click_by_script(self, locator, pre_sleep=0.1, bac_sleep=0.1, raise_=False):
+        try:
+            time.sleep(pre_sleep)
+            elem = self.__ele(locator)
+            self.driver.execute_script("arguments[0].click();", elem)
+            time.sleep(bac_sleep)
+        except Exception as e:
+            if raise_:
+                raise e
+            else:
+                log.error(e)
 
     def window_scroll(self, width=None, height=None):
         """
