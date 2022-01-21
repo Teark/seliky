@@ -94,22 +94,22 @@ class WebDriver2:
         if self.display:
             try:
                 for _ in range(2):
-                    self.driver.execute_script('arguments[0].style.border="2px solid #87CECB"', ele)
+                    self.driver.execute_script('arguments[0].style.border="2px solid #FFFF00"', ele)
                     time.sleep(0.1)
-                    self.driver.execute_script('arguments[0].style.border="2px solid #FF00FF"', ele)
+                    self.driver.execute_script('arguments[0].style.border="2px solid #FF0033"', ele)
                     time.sleep(0.1)
-                self.driver.execute_script('arguments[0].style.border="2px solid #FF00FF"', ele)
+                self.driver.execute_script('arguments[0].style.border="2px solid #FF0033"', ele)
                 time.sleep(0.5)
                 self.driver.execute_script('arguments[0].style.border=""', ele)
             except WebDriverException:
                 pass
 
-    @func_set_timeout(0.5)
+    @func_set_timeout(1)
     def __eles(self, key, vlaue):
         elems = self.driver.find_elements(by=key, value=vlaue)
         return elems
 
-    def __find_ele(self, locator_, index: int = 0, timeout: int = 5, raise_=True):
+    def __find_ele(self, locator_, index: int = 0, timeout: int = 6, raise_=True):
         time.sleep(0.2)
         if locator_.startswith("/"):
             by = By.XPATH
@@ -172,7 +172,7 @@ class WebDriver2:
                 time.sleep(0.6)
                 continue
 
-    def __ele(self, locator, index=0, timeout=5, raise_=True, log_=None, log_when_fail=True):
+    def __ele(self, locator, index=0, timeout=6, raise_=True, log_=None, log_when_fail=True):
         """
         Find elements by its location
         """
@@ -191,7 +191,7 @@ class WebDriver2:
                         log.error("☹ ✘ %s" % locator)
         elif isinstance(locator, list or tuple):
             for i in locator:
-                ele = self.__find_ele(i, index, timeout=timeout - 1)
+                ele = self.__find_ele(i, index, timeout)
                 if ele:
                     log.warn("☹ - the valid selector is %s, you can remove others in it's list" % i)
                     return ele
@@ -228,8 +228,8 @@ class WebDriver2:
                     time.sleep(bac_sleep)
                     return elem
                 except Exception as e:
-                    time.sleep(0.5)
-                    if raise_ and i > 1:
+                    time.sleep(1)
+                    if raise_ and i == 1:
                         log.error('click failed %s, reason belows' % locator)
                         raise e
             elif i == 1 and raise_:
@@ -259,11 +259,11 @@ class WebDriver2:
             else:
                 log.error('no such elem - %s' % locator)
 
-    def upload(self, locator: str, file_path: str, timeout=5):
+    def upload(self, locator: str, file_path: str, timeout=6):
         """
         upload in traditional way: send files to input label
         """
-        elem = self.__ele(locator, 0, 5)
+        elem = self.__ele(locator, 0, timeout)
         if elem:
             elem.send_keys(file_path)
             time.sleep(timeout)
@@ -292,16 +292,14 @@ class WebDriver2:
         finally:
             time.sleep(timeout)
 
-    def is_displayed(self, locator: str, index: int = 0,
-                     timeout: int = 6, pre_sleep=0, bac_sleep=0):
+    def is_displayed(self, locator: str, timeout: int = 6):
         """
         weather the element is displayed in html dom
         """
-        time.sleep(pre_sleep)
-        elem = self.__ele(locator, index, timeout, raise_=False, log_when_fail=False)
-        if elem:
-            time.sleep(bac_sleep)
-            return elem
+        el = WebDriverWait(self.driver, timeout).until(
+            ec.presence_of_element_located((By.XPATH, locator)))
+        if el:
+            return el
         else:
             return False
 
@@ -316,10 +314,10 @@ class WebDriver2:
         except TimeoutException:
             return False
 
-    def click_by_script(self, locator, pre_sleep=0.1, bac_sleep=0.1, raise_=False):
+    def click_by_script(self, locator, timeout=6, pre_sleep=0.1, bac_sleep=0.1, raise_=False):
         try:
             time.sleep(pre_sleep)
-            elem = self.__ele(locator)
+            elem = self.__ele(locator, timeout=timeout)
             self.driver.execute_script("arguments[0].click();", elem)
             time.sleep(bac_sleep)
         except Exception as e:
@@ -355,23 +353,9 @@ class WebDriver2:
             self.driver.execute_script(js)
 
     def find_element(self, locator, index=0):
-        """
-        find element by locator
-
-        Usage:
-            driver.find_element('//div[text()="seliky"]')
-            driver.find_element('xpath=//div[text()="seliky"]')
-            driver.find_element('id=seliky')
-            driver.find_element('class="seliky"')
-            driver.find_element('partial_link_text="seliky"')
-            ...
-        """
         return self.__ele(locator, index)
 
     def find_elements(self, locator):
-        """
-        find a list of ele
-        """
         return self.__ele(locator, 999)
 
     def add_cookies(self, file_path: str):
