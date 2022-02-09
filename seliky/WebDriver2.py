@@ -162,10 +162,14 @@ class WebDriver2:
                     time.sleep(0.8)
                     continue
                 if index != 999:
-                    elem = elem[index]  # The first one is selected by default
+                    try:
+                        elem = elem[index]  # The first one is selected by default
+                    except IndexError:
+                        log.warn('IndexError: index out of range, choose the first')
+                        elem = elem[0]
                 self.__highlight(elem)
                 return elem
-            except (FunctionTimedOut, InvalidSelectorException, SyntaxError, IndexError) as e:
+            except (FunctionTimedOut, InvalidSelectorException, SyntaxError) as e:
                 if raise_ and i == timeout:
                     raise e
                 self.switch_to().default_content()
@@ -296,12 +300,12 @@ class WebDriver2:
         """
         weather the element is displayed in html dom
         """
-        el = WebDriverWait(self.driver, timeout).until(
-            ec.presence_of_element_located((By.XPATH, locator)))
-        if el:
-            return el
-        else:
-            return False
+        try:
+            ele = WebDriverWait(self.driver, timeout).until(
+                ec.presence_of_element_located((By.XPATH, locator)))
+        except TimeoutException:
+            ele = False
+        return ele
 
     def is_visible(self, locator: str, timeout: int = 6):
         """
@@ -310,14 +314,14 @@ class WebDriver2:
         try:
             ele = WebDriverWait(self.driver, timeout).until(
                 ec.visibility_of_element_located((By.XPATH, locator)))
-            return ele
         except TimeoutException:
-            return False
+            ele = False
+        return ele
 
-    def click_by_script(self, locator, timeout=6, pre_sleep=0.1, bac_sleep=0.1, raise_=False):
+    def click_by_script(self, locator, index=0, timeout=6, pre_sleep=0.1, bac_sleep=0.1, raise_=False):
         try:
             time.sleep(pre_sleep)
-            elem = self.__ele(locator, timeout=timeout)
+            elem = self.__ele(locator, index=index, timeout=timeout)
             self.driver.execute_script("arguments[0].click();", elem)
             time.sleep(bac_sleep)
         except Exception as e:

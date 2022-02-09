@@ -3,7 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="5e16fa1b-8ccb-442e-9069-b1e08433aa80" name="Changes" comment="Changes">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo.py" beforeDir="false" afterPath="$PROJECT_DIR$/demo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/demo.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/seliky/WebDriver2.py" beforeDir="false" afterPath="$PROJECT_DIR$/seliky/WebDriver2.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
     </list>
@@ -111,7 +111,13 @@
       <workItem from="1640576820081" duration="261000" />
       <workItem from="1641434900536" duration="817000" />
       <workItem from="1641438436720" duration="4000" />
-      <workItem from="1642749977645" duration="5200000" />
+      <workItem from="1642749977645" duration="5819000" />
+      <workItem from="1642755878201" duration="1903000" />
+      <workItem from="1642987866418" duration="5000" />
+      <workItem from="1643014342886" duration="196000" />
+      <workItem from="1643077111562" duration="355000" />
+      <workItem from="1643079093937" duration="3000" />
+      <workItem from="1644309422471" duration="11000" />
     </task>
     <servers />
   </component>
@@ -130,18 +136,7 @@
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/demo.py</url>
-          <line>17</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
-  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/seliky$demo.coverage" NAME="demo Coverage Results" MODIFIED="1642753824259" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/seliky$demo.coverage" NAME="demo Coverage Results" MODIFIED="1642757249193" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
