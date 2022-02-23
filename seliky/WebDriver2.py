@@ -207,32 +207,22 @@ class WebDriver2:
         else:
             raise TypeError("locator must be str or iterable type %s" % locator)
 
-    def click(self, locator, index: int = 0, timeout: int = 6, log_: bool = None,
+    def click(self, locator, index: int = 0, timeout: int = 6,
               pre_sleep=0.1, bac_sleep=0.1, raise_: bool = True):
         """
-        click a element by it's locator
-        :param locator: Positioning expression
-        :param index: If there are more than one, use the first one
-        :param timeout: find it in this time or fail
-        :param log_: weather log it while False
-        :param pre_sleep: sleep before execute
-        :param bac_sleep: sleep after execute
-        :param raise_: weather raise exception when it ocur
-        Usage:
-            driver.click(id=su)
+        click element
         """
-        log_ = self.log_ if log_ is None else log_
         time.sleep(pre_sleep)
         for i in range(2):
-            elem = self.__ele(locator, index, timeout, raise_, log_)
+            elem = self.__ele(locator, index, timeout, raise_)
             if elem:
                 try:
                     time.sleep(0.1)
                     elem.click()
-                    time.sleep(bac_sleep)
+                    if not i:
+                        time.sleep(bac_sleep)
                     return elem
                 except Exception as e:
-                    time.sleep(1)
                     if raise_ and i == 1:
                         log.error('click failed %s, reason belows' % locator)
                         raise e
@@ -314,21 +304,26 @@ class WebDriver2:
         try:
             ele = WebDriverWait(self.driver, timeout).until(
                 ec.visibility_of_element_located((By.XPATH, locator)))
-        except TimeoutException:
+        except Exception as e:
+            log.warn(e)
             ele = False
         return ele
 
-    def click_by_script(self, locator, index=0, timeout=6, pre_sleep=0.1, bac_sleep=0.1, raise_=False):
-        try:
-            time.sleep(pre_sleep)
-            elem = self.__ele(locator, index=index, timeout=timeout)
-            self.driver.execute_script("arguments[0].click();", elem)
-            time.sleep(bac_sleep)
-        except Exception as e:
-            if raise_:
-                raise e
-            else:
-                log.error(e)
+    def click2(self, locator, index=0, timeout=6, pre_sleep=0.1, bac_sleep=0.1, raise_=False):
+        time.sleep(pre_sleep)
+        for i in range(2):
+            try:
+                elem = self.__ele(locator, index=index, timeout=timeout)
+                self.driver.execute_script("arguments[0].click();", elem)
+                time.sleep(bac_sleep)
+                return elem
+            except Exception as e:
+                if raise_:
+                    raise e
+                else:
+                    log.error("click fail:" + str(e))
+                if not i:
+                    time.sleep(1)
 
     def window_scroll(self, width=None, height=None):
         """
