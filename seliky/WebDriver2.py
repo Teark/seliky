@@ -27,7 +27,8 @@ class WebDriver2:
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
     def __init__(self, display: bool = True, log_: bool = False,
-                 executable_path: str = 'chromedriver', options: list = '', experimental_option=''):
+                 executable_path: str = 'chromedriver', options: list = '',
+                 experimental_option='', loger_infile=None):
         """
         :param display: weather show dynamic, False means headless mode
         :param log_: weather show log info
@@ -51,6 +52,8 @@ class WebDriver2:
         self.options = options
         self.experimental_option = experimental_option
         self.executable_path = executable_path
+        global log
+        log = loger_infile if loger_infile else log
 
     def open_browser(self):
         """

@@ -46,25 +46,25 @@ class Log:
         self._logger.debug("DEBUG " + str(msg))
 
     def info(self, msg):
-        msg = '\033[1;32m %s' % 'INFO ' + str(msg)
+        msg = 'INFO ' + str(msg)
         if self.write_in_file:
             self._logger.info(msg)
         else:
-            print(msg)
+            print('\033[1;32m %s' % msg)
         # _logger.info(Fore.GREEN + "INFO " + str(msg) + Style.RESET_ALL)
 
     def error(self, msg):
-        msg = '\033[1;31m %s' % 'ERROR ' + str(msg)
+        msg = 'ERROR ' + str(msg)
         if self.write_in_file:
             self._logger.error(msg)
         else:
-            print(msg)
+            print('\033[1;31m %s' % msg)
         # self._logger.error(Fore.RED + "ERROR " + str(msg) + Style.RESET_ALL)
 
     def warn(self, msg):
-        msg = '\033[1;33m %s' % 'WARN ' + str(msg)
+        msg = 'WARN ' + str(msg)
         if self.write_in_file:
             self._logger.warning(msg)
         else:
-            print(msg)
+            print('\033[1;33m %s' % msg)
         # self._logger.warning(Fore.YELLOW + "WARNING " + str(msg) + Style.RESET_ALL)
