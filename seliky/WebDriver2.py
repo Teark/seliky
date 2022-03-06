@@ -119,40 +119,40 @@ class WebDriver2:
             locator_ = locator_
         elif locator_.startswith("xpath"):
             by = By.XPATH
-            locator_ = locator_[6:]
+            locator_ = locator_.index('=')
         elif locator_.startswith("id"):
             by = By.ID
-            locator_ = locator_[3:]
+            locator_ = locator_[4:-1]
         elif locator_.startswith("css"):
             by = By.CLASS_NAME
-            locator_ = locator_[4:]
+            locator_ = locator_[5:-1]
         elif locator_.startswith("class"):
             by = By.CLASS_NAME
-            locator_ = locator_[6:]
+            locator_ = locator_[7:-1]
         elif locator_.startswith('class_name'):
             by = By.CLASS_NAME
-            locator_ = locator_[11:]
+            locator_ = locator_[12:-1]
         elif locator_.startswith('link'):
             by = By.LINK_TEXT
-            locator_ = locator_[5:]
+            locator_ = locator_[6:-1]
         elif locator_.startswith('link_text'):
             by = By.LINK_TEXT
-            locator_ = locator_[10:]
+            locator_ = locator_[11:-1]
         elif locator_.startswith('partial'):
             by = By.PARTIAL_LINK_TEXT
-            locator_ = locator_[8:]
+            locator_ = locator_[9:-1]
         elif locator_.startswith('partial_link_text'):
             by = By.PARTIAL_LINK_TEXT
-            locator_ = locator_[18:]
+            locator_ = locator_[19:-1]
         elif locator_.startswith('css'):
             by = By.CSS_SELECTOR
-            locator_ = locator_[4:]
+            locator_ = locator_[5:-1]
         elif locator_.startswith('css_selector'):
             by = By.CSS_SELECTOR
-            locator_ = locator_[13:]
+            locator_ = locator_[14:-1]
         elif locator_.startswith('tag'):
             by = By.TAG_NAME
-            locator_ = locator_[4:]
+            locator_ = locator_[5:-1]
         else:
             raise TypeError("you'd better write locator in xpath, such as '//div[@class='seliky']' -> %s" % locator_)
         for i in range(timeout):
