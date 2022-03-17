@@ -198,7 +198,7 @@ class WebDriver2:
                         log.error("☹ ✘ %s" % locator)
         elif isinstance(locator, list or tuple):
             for i in locator:
-                ele = self.__find_ele(i, index, timeout)
+                ele = self.__find_ele(i, index, timeout-1)
                 if ele:
                     log.warn("☹ - the valid selector is %s, you can remove others in it's list" % i)
                     return ele
@@ -206,7 +206,7 @@ class WebDriver2:
                     if locator.index(i) == len(locator) - 1:
                         log.error("☹ ✘ no right ele in the locator list %s" % locator)
                     else:
-                        continue
+                        ...
         else:
             raise TypeError("locator must be str or iterable type %s" % locator)
 
@@ -307,8 +307,7 @@ class WebDriver2:
         try:
             ele = WebDriverWait(self.driver, timeout).until(
                 ec.visibility_of_element_located((By.XPATH, locator)))
-        except Exception as e:
-            log.warn(e)
+        except TimeoutException:
             ele = False
         return ele
 
