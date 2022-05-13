@@ -5,7 +5,7 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setuptools.setup(
     name="seliky",
-    version="0.92",
+    version="0.95",
     author="TEARK",
     author_email="913355434@qq.com",
     description="a better ui autotest lib based on selenium, compatible with robot framework",
@@ -22,5 +22,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.6',
 )

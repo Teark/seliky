@@ -1,5 +1,5 @@
 import time
-from seliky.WebDriver2 import WebDriver2
+from seliky.WebDriver2 import WebDriver
 
 
 class Page:
@@ -16,7 +16,7 @@ class Page:
 def test_baidu():
     """百度搜索测试"""
     p = Page()
-    driver = WebDriver2()
+    driver = WebDriver()
     driver.open_browser()
     driver.get(p.baidu_url)
     for i in p.search_words:

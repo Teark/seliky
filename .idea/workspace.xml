@@ -2,10 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5e16fa1b-8ccb-442e-9069-b1e08433aa80" name="Changes" comment="Changes">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/seliky.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/seliky.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo.py" beforeDir="false" afterPath="$PROJECT_DIR$/demo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Pipfile" beforeDir="false" afterPath="$PROJECT_DIR$/Pipfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Pipfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Pipfile.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/seliky/WebDriver2.py" beforeDir="false" afterPath="$PROJECT_DIR$/seliky/WebDriver2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/seliky/demo.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/seliky/log.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -46,13 +49,14 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/seliky" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Project\seliky\seliky" />
       <recent name="C:\Users\Administrator\Desktop\seliky\seliky" />
       <recent name="C:\Users\Administrator\Desktop\seliky" />
     </key>
@@ -122,6 +126,11 @@
       <workItem from="1643079093937" duration="3000" />
       <workItem from="1644309422471" duration="11000" />
       <workItem from="1644371559983" duration="292000" />
+      <workItem from="1648698128410" duration="495000" />
+      <workItem from="1648707957653" duration="6000" />
+      <workItem from="1652429886794" duration="165000" />
+      <workItem from="1652430082034" duration="202000" />
+      <workItem from="1652430418350" duration="550000" />
     </task>
     <servers />
   </component>
@@ -138,6 +147,7 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
