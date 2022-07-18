@@ -6,7 +6,7 @@ import time
 from func_timeout import func_set_timeout, FunctionTimedOut
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException, WebDriverException, \
-    StaleElementReferenceException, TimeoutException, InvalidSelectorException
+    StaleElementReferenceException, TimeoutException, InvalidSelectorException, SessionNotCreatedException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -15,12 +15,10 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.remote.webdriver import WebDriver as Wd
 
 
 class WebDriver:
-    """
-    encapsulation based on webdriver in selenium
-    """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
     def __init__(
@@ -53,7 +51,7 @@ class WebDriver:
         self.experimental_option = experimental_option
         self.executable_path = executable_path
         self.logger = logger
-        self.driver = ...
+        self.driver: Wd
 
     def open_browser(self):
         """
@@ -86,7 +84,17 @@ class WebDriver:
         else:  # devops platform
             for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
                 opt.add_argument(i)
-            self.driver = webdriver.Chrome(executable_path=self.executable_path, options=opt)
+
+            # 如果发生driver不匹配，则自动下载适配的
+            try:
+                self.driver = webdriver.Chrome(executable_path=self.executable_path, options=opt)
+            except (SessionNotCreatedException, WebDriverException):
+                from webdriver_manager.chrome import ChromeDriverManager
+                from selenium.webdriver.chrome.service import Service as ChromeService
+                import shutil
+                new_path = ChromeDriverManager().install()
+                shutil.copy(new_path, self.executable_path)
+                self.driver = webdriver.Chrome(service=ChromeService())
         return self.driver
 
     def __highlight(self, ele):
@@ -112,7 +120,7 @@ class WebDriver:
         elems = self.driver.find_elements(by=key, value=vlaue)
         return elems
 
-    def __find_ele(self, locator_, index: int = 0, timeout: int = 6, raise_=True):
+    def __find_ele(self, locator_, index: int = 0, timeout: int = 10, raise_=True):
         time.sleep(0.2)
         if locator_.startswith("/"):
             by = By.XPATH
@@ -179,7 +187,7 @@ class WebDriver:
                 time.sleep(0.6)
                 continue
 
-    def __ele(self, locator, index=0, timeout=6, raise_=True, log_when_fail=True):
+    def __ele(self, locator, index=0, timeout=10, raise_=True, log_when_fail=True):
         """
         Find elements by its location
         """
@@ -217,7 +225,7 @@ class WebDriver:
         else:
             raise TypeError("locator must be str or iterable type %s" % locator)
 
-    def click(self, locator, index: int = 0, timeout: int = 6,
+    def click(self, locator, index: int = 0, timeout: int = 10,
               pre_sleep=0.1, bac_sleep=0.1, raise_: bool = True):
         """
         click element
@@ -244,7 +252,7 @@ class WebDriver:
                 raise ValueError('no such ele %s' % locator)
 
     def send_keys(self, locator, value,
-                  index: int = 0, timeout: int = 6, clear: bool = True,
+                  index: int = 0, timeout: int = 10, clear: bool = True,
                   pre_sleep=0, bac_sleep=0, raise_=True, enter=False):
         """
         Send value to input box
@@ -256,7 +264,10 @@ class WebDriver:
         elem = self.__ele(locator, index, timeout, raise_=raise_)
         if elem:
             if clear:
-                elem.clear()
+                try:
+                    elem.clear()  # 上传时这里引发过错误
+                except Exception:
+                    ...
             elem.send_keys(value)
             if enter:
                 elem.send_keys(Keys.ENTER)
@@ -271,7 +282,7 @@ class WebDriver:
                 else:
                     print(error_)
 
-    def upload(self, locator: str, file_path: str, timeout=6):
+    def upload(self, locator: str, file_path: str, timeout=10):
         """
         upload in traditional way: send files to input label
         """
@@ -282,7 +293,7 @@ class WebDriver:
         else:
             raise ValueError("ValueError: no such elem - %s" % locator)
 
-    def upload_with_autoit(self, file_path: str, uploader, timeout=6):
+    def upload_with_autoit(self, file_path: str, uploader, timeout=10):
         """
         After wake-up system upload pop-up window，Call this method to upload files
         this is au3 script by autoit:
@@ -307,7 +318,7 @@ class WebDriver:
         finally:
             time.sleep(timeout)
 
-    def is_displayed(self, locator: str, timeout: int = 6):
+    def is_displayed(self, locator: str, timeout: int = 10):
         """
         weather the element is displayed in html dom
         """
@@ -318,7 +329,7 @@ class WebDriver:
             ele = False
         return ele
 
-    def is_visible(self, locator: str, timeout: int = 6):
+    def is_visible(self, locator: str, timeout: int = 10):
         """
         weather the element is visible, css not hidden, return a bool
         """
@@ -329,7 +340,7 @@ class WebDriver:
             ele = False
         return ele
 
-    def click2(self, locator, index=0, timeout=6, pre_sleep=0.1, bac_sleep=0.1, raise_=False):
+    def click2(self, locator, index=0, timeout=10, pre_sleep=0.1, bac_sleep=0.1, raise_=False):
         time.sleep(pre_sleep)
         for i in range(2):
             try:
@@ -463,7 +474,7 @@ class WebDriver:
         else:
             return False
 
-    def is_enable(self, locator, index=0, timeout=6):
+    def is_enable(self, locator, index=0, timeout=10):
         """
         weather clickable
         """
