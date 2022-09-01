@@ -25,9 +25,10 @@ class WebDriver:
             self,
             executable_path: str = 'chromedriver',
             display: bool = True,
-            logger=None,
+            logger=None,  # loguru object
             options: list = '',
             experimental_option='',
+            highlight: float = 0.01,  # the same as mro
     ):
         """
         :param display: weather show dynamic, False means headless mode
@@ -46,6 +47,9 @@ class WebDriver:
             'profile.default_content_settings.popups': 0,
              'download.default_directory': r'd:\'}
         """
+        if highlight > 1:
+            raise AttributeError('highlight must be less than 1')
+        self.highlight = highlight
         self.display = display
         self.options = options
         self.experimental_option = experimental_option
@@ -53,65 +57,71 @@ class WebDriver:
         self.logger = logger
         self.driver: Wd
 
-    def open_browser(self):
+    def open_browser(self, service=None):
         """
         open a browser, default open chrome browser
         """
-        if 'chrome' in self.executable_path:
-            browser_type = 'chrome'
-            opt = ChromeOptions()
-        else:
-            browser_type = 'firefox'
-            opt = FirefoxOptions()
+        try:
+            if 'chrome' in self.executable_path:
+                browser_type = 'chrome'
+                opt = ChromeOptions()
+            else:
+                browser_type = 'firefox'
+                opt = FirefoxOptions()
 
-        for i in self.options:
-            opt.add_argument(i)
-
-        if self.experimental_option:
-            opt.add_experimental_option('prefs', self.experimental_option)
-
-        if platform.system().lower() in ["windows", "macos"] and self.display:
-            self.driver = webdriver.Chrome(
-                executable_path=self.executable_path,
-                options=opt
-            ) if browser_type == 'chrome' else webdriver.Firefox(
-                executable_path=self.executable_path,
-                options=opt,
-                service_log_path=os.devnull
-            )
-            self.driver.maximize_window()
-
-        else:  # devops platform
-            for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
+            for i in self.options:
                 opt.add_argument(i)
 
-            # 如果发生driver不匹配，则自动下载适配的
-            try:
-                self.driver = webdriver.Chrome(executable_path=self.executable_path, options=opt)
-            except (SessionNotCreatedException, WebDriverException):
-                from webdriver_manager.chrome import ChromeDriverManager
-                from selenium.webdriver.chrome.service import Service as ChromeService
-                import shutil
-                new_path = ChromeDriverManager().install()
-                shutil.copy(new_path, self.executable_path)
-                self.driver = webdriver.Chrome(service=ChromeService())
+            if self.experimental_option:
+                opt.add_experimental_option('prefs', self.experimental_option)
+
+            if platform.system().lower() in ["windows", "macos"] and self.display:
+                self.driver = webdriver.Chrome(
+                    executable_path=self.executable_path,
+                    options=opt
+                ) if browser_type == 'chrome' else webdriver.Firefox(
+                    executable_path=self.executable_path,
+                    options=opt,
+                    service_log_path=os.devnull
+                )
+                self.driver.maximize_window()
+
+            else:  # devops platform
+                for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
+                    opt.add_argument(i)
+                # if driver not matching, download it
+                if service:
+                    self.driver = webdriver.Chrome(service=service)
+                else:
+                    self.driver = webdriver.Chrome(executable_path=self.executable_path, options=opt)
+            time.sleep(1)  # need it, eg.oppo star with user-dir
+        except (SessionNotCreatedException, WebDriverException):
+            from webdriver_manager.chrome import ChromeDriverManager
+            from selenium.webdriver.chrome.service import Service as ChromeService
+            import shutil
+            new_path = ChromeDriverManager().install()
+            shutil.copy(new_path, self.executable_path)
+            return self.open_browser(service=ChromeService())
         return self.driver
 
     def __highlight(self, ele):
         """
-        element will be red and blue in several quickly times
+        highlight element in the page, and slower in step
         :param ele: element locator
         """
+        if not self.highlight:
+            return
+        js = 'arguments[0].style.border="2px solid '
         if self.display:
             try:
                 for _ in range(2):
-                    self.driver.execute_script('arguments[0].style.border="2px solid #FFFF00"', ele)
-                    time.sleep(0.1)
-                    self.driver.execute_script('arguments[0].style.border="2px solid #FF0033"', ele)
-                    time.sleep(0.1)
-                self.driver.execute_script('arguments[0].style.border="2px solid #FF0033"', ele)
-                time.sleep(0.5)
-                self.driver.execute_script('arguments[0].style.border=""', ele)
+                    self.driver.execute_script(js + '#FFFF00"', ele)
+                    time.sleep(self.highlight)
+                    self.driver.execute_script(js + '#FF0033"', ele)
+                    time.sleep(self.highlight)
+                self.driver.execute_script(js + '#FF0033"', ele)
+                time.sleep(self.highlight * 4)
+                # self.driver.execute_script('arguments[0].style.border=""', ele)
             except WebDriverException:
                 pass
 
@@ -120,7 +130,7 @@ class WebDriver:
         elems = self.driver.find_elements(by=key, value=vlaue)
         return elems
 
-    def __find_ele(self, locator_, index: int = 0, timeout: int = 10, raise_=True):
+    def __find_ele(self, locator_, index: int = 0, timeout: int = 10, raise_=True, is_light=True):
         time.sleep(0.2)
         if locator_.startswith("/"):
             by = By.XPATH
@@ -178,7 +188,8 @@ class WebDriver:
                     except IndexError:
                         self.logger.warn('IndexError: index out of range, choose the first')
                         elem = elem[0]
-                self.__highlight(elem)
+                if is_light:
+                    self.__highlight(elem)
                 return elem
             except (FunctionTimedOut, InvalidSelectorException, SyntaxError) as e:
                 if raise_ and i == timeout:
@@ -187,12 +198,12 @@ class WebDriver:
                 time.sleep(0.6)
                 continue
 
-    def __ele(self, locator, index=0, timeout=10, raise_=True, log_when_fail=True):
+    def __ele(self, locator, index=0, timeout=10, raise_=True, log_when_fail=True, is_light=True):
         """
         Find elements by its location
         """
         if isinstance(locator, str):
-            ele = self.__find_ele(locator, index, timeout, raise_)
+            ele = self.__find_ele(locator, index, timeout, raise_, is_light=is_light)
             if ele:
                 if self.logger:
                     self.logger.info("☺ ✔ %s" % locator)
@@ -258,7 +269,7 @@ class WebDriver:
         Send value to input box
 
         Usage:
-            driver.send_keys("hello", "id=kw")
+            driver.send_keys("id=kw", "hello")
         """
         time.sleep(pre_sleep)
         elem = self.__ele(locator, index, timeout, raise_=raise_)
@@ -305,7 +316,7 @@ class WebDriver:
         try:
             sub_pop = subprocess.Popen(interpret_code)
         except FileNotFoundError:
-            error_ = "上传器路径没找到"
+            error_ = "uploader path not found"
             if self.logger:
                 self.logger.error()
             else:
@@ -447,7 +458,7 @@ class WebDriver:
         Usage:
             driver.text(id=su)
         """
-        elem = self.__ele(locator, index, timeout=timeout)
+        elem = self.__ele(locator, index, timeout=timeout, is_light=False)  # 爬虫中获取text，去掉高亮不然太浪费时间。
         return elem.text
 
     def clear(self, locator, index=0):

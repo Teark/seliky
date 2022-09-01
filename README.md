@@ -12,14 +12,17 @@
 
 #### 3. Compatible with robot framework
 
-#### 4. Encapsulate a large number of common forms in UI automation, which can be directly used in the project without writing
+#### 4. Encapsulate a large number of common forms in UI automation, which can be directly used in the project directly
 
-#### 5. New functions will be added continuously, such as Cookie login, various event combinations, etc
+#### 5. When the driver version does not match, the driver will be automatically downloaded
+
+#### 6. More stable positioning mechanism, waiting mechanism, etc.
+
 
 <hr>
 
 See the built-in case demo.py to learn more... <br>
-Installation method: pip install seliky - I https://pypi.org/simple
+Installation method: pip install seliky - i https://pypi.org/simple
 
 <br><br><br>
 <h2> 中文介绍</h2>
@@ -36,7 +39,9 @@ Installation method: pip install seliky - I https://pypi.org/simple
 
 #### 4. 封装大量ui自动化中的通用形式，可在项目中直接运用无需再写
 
-#### 5. 会持续添加新功能：如cookie登录、各种事件组合等功能
+#### 5. 当driver版本不匹配时，会自动下载driver
+
+#### 6. 更加稳定的定位机制、等待机制等
 
 <hr>
 查看内置案例 demo.py 了解更多...<br>
