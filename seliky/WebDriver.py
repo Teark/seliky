@@ -16,6 +16,9 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.remote.webdriver import WebDriver as Wd
+from seliky.utils import Log
+
+log: Log
 
 
 class WebDriver:
@@ -28,7 +31,7 @@ class WebDriver:
             logger=None,  # loguru object
             options: list = '',
             experimental_option='',
-            highlight: float = 0.01,  # the same as mro
+            highlight: float = 0.06,  # the same as mro
     ):
         """
         :param display: weather show dynamic, False means headless mode
@@ -54,10 +57,11 @@ class WebDriver:
         self.options = options
         self.experimental_option = experimental_option
         self.executable_path = executable_path
-        self.logger = logger
+        global log
+        log = Log(logger)
         self.driver: Wd
 
-    def open_browser(self, service=None):
+    def open_browser(self, service=None, re_open=False):
         """
         open a browser, default open chrome browser
         """
@@ -76,14 +80,23 @@ class WebDriver:
                 opt.add_experimental_option('prefs', self.experimental_option)
 
             if platform.system().lower() in ["windows", "macos"] and self.display:
-                self.driver = webdriver.Chrome(
-                    executable_path=self.executable_path,
-                    options=opt
-                ) if browser_type == 'chrome' else webdriver.Firefox(
-                    executable_path=self.executable_path,
-                    options=opt,
-                    service_log_path=os.devnull
-                )
+                if browser_type == 'chrome':
+                    if service:
+                        self.driver = webdriver.Chrome(service=service)  # 谷歌升级
+                    else:
+                        self.driver = webdriver.Chrome(
+                            executable_path=self.executable_path,
+                            options=opt
+                        )
+                else:
+                    if service:
+                        self.driver = webdriver.Firefox(service=service)
+                    else:
+                        self.driver = webdriver.Firefox(
+                            executable_path=self.executable_path,
+                            options=opt,
+                            service_log_path=os.devnull
+                        )
                 self.driver.maximize_window()
 
             else:  # devops platform
@@ -95,13 +108,17 @@ class WebDriver:
                 else:
                     self.driver = webdriver.Chrome(executable_path=self.executable_path, options=opt)
             time.sleep(1)  # need it, eg.oppo star with user-dir
+
         except (SessionNotCreatedException, WebDriverException):
             from webdriver_manager.chrome import ChromeDriverManager
             from selenium.webdriver.chrome.service import Service as ChromeService
-            import shutil
             new_path = ChromeDriverManager().install()
-            shutil.copy(new_path, self.executable_path)
-            return self.open_browser(service=ChromeService())
+            if self.executable_path != 'chromedriver':  # 如果等于chromedriver，说明不是路径，复制没有用
+                import shutil
+                shutil.copy(new_path, self.executable_path)
+            if re_open:  # 说明第二次故障
+                raise EnvironmentError
+            return self.open_browser(service=ChromeService(executable_path=new_path), re_open=True)
         return self.driver
 
     def __highlight(self, ele):
@@ -120,18 +137,18 @@ class WebDriver:
                     self.driver.execute_script(js + '#FF0033"', ele)
                     time.sleep(self.highlight)
                 self.driver.execute_script(js + '#FF0033"', ele)
-                time.sleep(self.highlight * 4)
-                # self.driver.execute_script('arguments[0].style.border=""', ele)
+                time.sleep(self.highlight * 5)
+                self.driver.execute_script('arguments[0].style.border=""', ele)
             except WebDriverException:
                 pass
 
-    @func_set_timeout(1)
+    @func_set_timeout(1.1)
     def __eles(self, key, vlaue):
         elems = self.driver.find_elements(by=key, value=vlaue)
         return elems
 
     def __find_ele(self, locator_, index: int = 0, timeout: int = 10, raise_=True, is_light=True):
-        time.sleep(0.2)
+        time.sleep(0.1)
         if locator_.startswith("/"):
             by = By.XPATH
             locator_ = locator_
@@ -186,7 +203,7 @@ class WebDriver:
                     try:
                         elem = elem[index]  # The first one is selected by default
                     except IndexError:
-                        self.logger.warn('IndexError: index out of range, choose the first')
+                        log.warning('IndexError: index out of range, choose the first')
                         elem = elem[0]
                 if is_light:
                     self.__highlight(elem)
@@ -205,62 +222,71 @@ class WebDriver:
         if isinstance(locator, str):
             ele = self.__find_ele(locator, index, timeout, raise_, is_light=is_light)
             if ele:
-                if self.logger:
-                    self.logger.info("☺ ✔ %s" % locator)
+                log.info("☺ ✔ %s" % locator)
                 return ele
             else:
                 if raise_:
                     raise ValueError("Not find element %s, please check locator expression" % locator)
                 else:
                     if log_when_fail:
-                        self.logger.error("☹ ✘ %s" % locator)
+                        log.error("☹ ✘ %s" % locator)
         elif isinstance(locator, list or tuple):
+            timeout = int(timeout / len(locator)) + 2
             for i in locator:
-                ele = self.__find_ele(i, index, timeout - 1)
+                ele = self.__find_ele(i, index, timeout)
                 if ele:
                     warn_ = "☹ - the valid selector is %s, you can remove others in it's list" % i
-                    if self.logger:
-                        self.logger.warn(warn_)
-                    else:
-                        print(warn_)
+                    log.warning(warn_)
                     return ele
                 else:
                     if locator.index(i) == len(locator) - 1:
                         error_ = "☹ ✘ no right ele in the locator list %s" % locator
-                        if self.logger:
-                            self.logger.error(error_)
-                        else:
-                            print(error_)
+                        log.error(error_)
                     else:
                         ...
         else:
             raise TypeError("locator must be str or iterable type %s" % locator)
 
-    def click(self, locator, index: int = 0, timeout: int = 10,
-              pre_sleep=0.1, bac_sleep=0.1, raise_: bool = True):
+    def click(self, locator, index: int = 0, timeout=10,
+              pre_sleep=0.1, bac_sleep=0.1, raise_: bool = True) -> bool:
         """
         click element
         """
         time.sleep(pre_sleep)
-        for i in range(2):
-            elem = self.__ele(locator, index, timeout, raise_)
-            if elem:
-                try:
-                    time.sleep(0.1)
-                    elem.click()
-                    if not i:
-                        time.sleep(bac_sleep)
-                    return elem
-                except Exception as e:
-                    if raise_ and i == 1:
-                        error_ = 'click failed %s, reason belows' % locator
-                        if self.logger:
-                            self.logger.error(error_)
-                        else:
-                            print(error_)
-                        raise e
-            elif i == 1 and raise_:
+        if not self.is_visible(locator, timeout):
+            return False
+        elem = self.__ele(locator, index, timeout, raise_)
+        if elem:
+            elem.click()
+            time.sleep(bac_sleep)
+            return True
+        else:
+            if raise_:
                 raise ValueError('no such ele %s' % locator)
+            else:
+                log.error('no such ele %s' % locator)
+                return False
+
+        # time.sleep(pre_sleep)
+        # for i in range(2):
+        #     elem = self.__ele(locator, index, timeout, raise_)
+        #     if elem:
+        #         try:
+        #             time.sleep(0.1)
+        #             elem.click()
+        #             if not i:
+        #                 time.sleep(bac_sleep)
+        #             return elem
+        #         except Exception as e:
+        #             if raise_ and i == 1:
+        #                 error_ = 'click failed %s, reason belows' % locator
+        #                 if log:
+        #                     log.error(error_)
+        #                 else:
+        #                     print(error_)
+        #                 raise e
+        #     elif i == 1 and raise_:
+        #         raise ValueError('no such ele %s' % locator)
 
     def send_keys(self, locator, value,
                   index: int = 0, timeout: int = 10, clear: bool = True,
@@ -288,10 +314,7 @@ class WebDriver:
                 raise ValueError("ValueError: no such elem - %s" % locator)
             else:
                 error_ = 'no such elem - %s' % locator
-                if self.logger:
-                    self.logger.error(error_)
-                else:
-                    print(error_)
+                log.error(error_)
 
     def upload(self, locator: str, file_path: str, timeout=10):
         """
@@ -317,10 +340,7 @@ class WebDriver:
             sub_pop = subprocess.Popen(interpret_code)
         except FileNotFoundError:
             error_ = "uploader path not found"
-            if self.logger:
-                self.logger.error()
-            else:
-                print(error_)
+            log.error(error_)
         try:
             sub_pop.wait(timeout)
         except subprocess.TimeoutExpired:
@@ -340,7 +360,7 @@ class WebDriver:
             ele = False
         return ele
 
-    def is_visible(self, locator: str, timeout: int = 10):
+    def is_visible(self, locator: str, timeout=10):
         """
         weather the element is visible, css not hidden, return a bool
         """
@@ -364,10 +384,7 @@ class WebDriver:
                     raise e
                 else:
                     error_ = "click fail:" + str(e)
-                    if self.logger:
-                        self.logger.error(error_)
-                    else:
-                        print(error_)
+                    log.error(error_)
                 if not i:
                     time.sleep(1)
 
@@ -537,10 +554,7 @@ class WebDriver:
         Quits the driver and closes every associated window.
         """
         quit_ = "✌ ending..."
-        if self.logger:
-            self.logger.info(quit_)
-        else:
-            print(quit_)
+        log.info(quit_)
         self.driver.quit()
 
     def close(self):
