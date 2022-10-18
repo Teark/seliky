@@ -3,10 +3,9 @@ import platform
 import subprocess
 from functools import reduce
 import time
-from func_timeout import func_set_timeout, FunctionTimedOut
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException, WebDriverException, \
-    StaleElementReferenceException, TimeoutException, InvalidSelectorException, SessionNotCreatedException
+    StaleElementReferenceException, TimeoutException, SessionNotCreatedException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -26,7 +25,7 @@ class WebDriver:
 
     def __init__(
             self,
-            executable_path: str = 'chromedriver',
+            executable_path: str = r"D:\s\python38\chromedriver.exe",
             display: bool = True,
             logger=None,  # loguru object
             options: list = '',
@@ -113,9 +112,8 @@ class WebDriver:
             from webdriver_manager.chrome import ChromeDriverManager
             from selenium.webdriver.chrome.service import Service as ChromeService
             new_path = ChromeDriverManager().install()
-            if self.executable_path != 'chromedriver':  # 如果等于chromedriver，说明不是路径，复制没有用
-                import shutil
-                shutil.copy(new_path, self.executable_path)
+            import shutil
+            shutil.copy(new_path, self.executable_path)
             if re_open:  # 说明第二次故障
                 raise EnvironmentError
             return self.open_browser(service=ChromeService(executable_path=new_path), re_open=True)
@@ -142,11 +140,6 @@ class WebDriver:
             except WebDriverException:
                 pass
 
-    @func_set_timeout(1.1)
-    def __eles(self, key, vlaue):
-        elems = self.driver.find_elements(by=key, value=vlaue)
-        return elems
-
     def __find_ele(self, locator_, index: int = 0, timeout: int = 10, raise_=True, is_light=True):
         time.sleep(0.1)
         if locator_.startswith("/"):
@@ -158,62 +151,29 @@ class WebDriver:
         elif locator_.startswith("id"):
             by = By.ID
             locator_ = locator_[4:-1]
-        elif locator_.startswith("css"):
-            by = By.CLASS_NAME
-            locator_ = locator_[5:-1]
         elif locator_.startswith("class"):
             by = By.CLASS_NAME
             locator_ = locator_[7:-1]
-        elif locator_.startswith('class_name'):
-            by = By.CLASS_NAME
-            locator_ = locator_[12:-1]
-        elif locator_.startswith('link'):
-            by = By.LINK_TEXT
-            locator_ = locator_[6:-1]
-        elif locator_.startswith('link_text'):
-            by = By.LINK_TEXT
-            locator_ = locator_[11:-1]
-        elif locator_.startswith('partial'):
-            by = By.PARTIAL_LINK_TEXT
-            locator_ = locator_[9:-1]
-        elif locator_.startswith('partial_link_text'):
-            by = By.PARTIAL_LINK_TEXT
-            locator_ = locator_[19:-1]
-        elif locator_.startswith('css'):
-            by = By.CSS_SELECTOR
-            locator_ = locator_[5:-1]
-        elif locator_.startswith('css_selector'):
-            by = By.CSS_SELECTOR
-            locator_ = locator_[14:-1]
-        elif locator_.startswith('tag'):
-            by = By.TAG_NAME
-            locator_ = locator_[5:-1]
         else:
             raise TypeError("you'd better write locator in xpath, such as '//div[@class='seliky']' -> %s" % locator_)
-        for i in range(timeout):
-            try:
-                elem = self.__eles(key=by, vlaue=locator_)
-                if not elem:
-                    if i == timeout and raise_:
-                        raise ValueError('no such ele %s' % locator_)
-                    self.switch_to().default_content()
-                    time.sleep(0.8)
+        try:
+            for i in range(int(timeout/2)):
+                if self.is_displayed(by=by, locator=locator_, timeout=2):
+                    elems = self.driver.find_elements(by=by, value=locator_)
+                    if index == 999:  # elem list
+                        elem = elems
+                    else:
+                        elem = elems[index]
+                        if is_light:
+                            self.__highlight(elem)
+                    return elem
+                else:
+                    # self.switch_to().default_content()
                     continue
-                if index != 999:
-                    try:
-                        elem = elem[index]  # The first one is selected by default
-                    except IndexError:
-                        log.warning('IndexError: index out of range, choose the first')
-                        elem = elem[0]
-                if is_light:
-                    self.__highlight(elem)
-                return elem
-            except (FunctionTimedOut, InvalidSelectorException, SyntaxError) as e:
-                if raise_ and i == timeout:
-                    raise e
-                self.switch_to().default_content()
-                time.sleep(0.6)
-                continue
+                # except (FunctionTimedOut, InvalidSelectorException, SyntaxError) as e:
+        except Exception as e:
+            if raise_:
+                raise e
 
     def __ele(self, locator, index=0, timeout=10, raise_=True, log_when_fail=True, is_light=True):
         """
@@ -248,45 +208,27 @@ class WebDriver:
             raise TypeError("locator must be str or iterable type %s" % locator)
 
     def click(self, locator, index: int = 0, timeout=10,
-              pre_sleep=0.1, bac_sleep=0.1, raise_: bool = True) -> bool:
+              pre_sleep=0.1, bac_sleep=0.1, raise_: bool = True):
         """
         click element
         """
         time.sleep(pre_sleep)
-        if not self.is_visible(locator, timeout):
-            return False
-        elem = self.__ele(locator, index, timeout, raise_)
-        if elem:
-            elem.click()
-            time.sleep(bac_sleep)
-            return True
-        else:
-            if raise_:
+        for i in range(2):
+            elem = self.__ele(locator, index, timeout, raise_)
+            if elem:
+                try:
+                    time.sleep(0.1)
+                    elem.click()
+                    if not i:
+                        time.sleep(bac_sleep)
+                    return elem
+                except Exception as e:
+                    if raise_ and i == 1:
+                        error_ = 'click failed %s, reason belows' % locator
+                        log.error(error_)
+                        raise e
+            elif i == 1 and raise_:
                 raise ValueError('no such ele %s' % locator)
-            else:
-                log.error('no such ele %s' % locator)
-                return False
-
-        # time.sleep(pre_sleep)
-        # for i in range(2):
-        #     elem = self.__ele(locator, index, timeout, raise_)
-        #     if elem:
-        #         try:
-        #             time.sleep(0.1)
-        #             elem.click()
-        #             if not i:
-        #                 time.sleep(bac_sleep)
-        #             return elem
-        #         except Exception as e:
-        #             if raise_ and i == 1:
-        #                 error_ = 'click failed %s, reason belows' % locator
-        #                 if log:
-        #                     log.error(error_)
-        #                 else:
-        #                     print(error_)
-        #                 raise e
-        #     elif i == 1 and raise_:
-        #         raise ValueError('no such ele %s' % locator)
 
     def send_keys(self, locator, value,
                   index: int = 0, timeout: int = 10, clear: bool = True,
@@ -349,24 +291,24 @@ class WebDriver:
         finally:
             time.sleep(timeout)
 
-    def is_displayed(self, locator: str, timeout: int = 10):
+    def is_displayed(self, locator: str, by='xpath', timeout: int = 10):
         """
         weather the element is displayed in html dom
         """
         try:
             ele = WebDriverWait(self.driver, timeout).until(
-                ec.presence_of_element_located((By.XPATH, locator)))
+                ec.presence_of_element_located((by, locator)))
         except TimeoutException:
             ele = False
         return ele
 
-    def is_visible(self, locator: str, timeout=10):
+    def is_visible(self, locator: str, by='xpath', timeout=10):
         """
         weather the element is visible, css not hidden, return a bool
         """
         try:
             ele = WebDriverWait(self.driver, timeout).until(
-                ec.visibility_of_element_located((By.XPATH, locator)))
+                ec.visibility_of_element_located((by, locator)))
         except TimeoutException:
             ele = False
         return ele

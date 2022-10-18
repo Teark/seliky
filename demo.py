@@ -7,7 +7,7 @@ class Page:
     baidu_url = "http://www.baidu.com"
     baidu_fanyi_url = "https://fanyi.baidu.com/#zh/en/"
     search_box = 'id="kw"'  # id 定位
-    search_button = ['id=wrong id', '//@class=wrong xpath', 'id="su"', "css=wrong css"]  # 只要有一个是对的就能定位到
+    search_button = ['id=wrong id', '//div[@len="2"]', 'id="su"', "css=wrong css"]  # 只要有一个是对的就能定位到
     logo = '//img[@class="index-logo-src"]'  # xpath 定位
     search_words = ["小张", "小李", "小刘"]
     no_exist_button = "//no_such_button"  # 不存在的按钮
