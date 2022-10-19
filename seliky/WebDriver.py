@@ -5,7 +5,7 @@ from functools import reduce
 import time
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException, WebDriverException, \
-    StaleElementReferenceException, TimeoutException, SessionNotCreatedException
+    StaleElementReferenceException, TimeoutException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -15,9 +15,6 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.remote.webdriver import WebDriver as Wd
-from seliky.utils import Log
-
-log: Log
 
 
 class WebDriver:
@@ -56,11 +53,10 @@ class WebDriver:
         self.options = options
         self.experimental_option = experimental_option
         self.executable_path = executable_path
-        global log
-        log = Log(logger)
+        self.logger = logger
         self.driver: Wd
 
-    def open_browser(self, service=None, re_open=False):
+    def open_browser(self, re_open=False):
         """
         open a browser, default open chrome browser
         """
@@ -80,35 +76,26 @@ class WebDriver:
 
             if platform.system().lower() in ["windows", "macos"] and self.display:
                 if browser_type == 'chrome':
-                    if service:
-                        self.driver = webdriver.Chrome(service=service)  # 谷歌升级
-                    else:
-                        self.driver = webdriver.Chrome(
-                            executable_path=self.executable_path,
-                            options=opt
-                        )
+                    self.driver = webdriver.Chrome(
+                        executable_path=self.executable_path,
+                        options=opt
+                    )
                 else:
-                    if service:
-                        self.driver = webdriver.Firefox(service=service)
-                    else:
-                        self.driver = webdriver.Firefox(
-                            executable_path=self.executable_path,
-                            options=opt,
-                            service_log_path=os.devnull
-                        )
+                    self.driver = webdriver.Firefox(
+                        executable_path=self.executable_path,
+                        options=opt,
+                        service_log_path=os.devnull
+                    )
                 self.driver.maximize_window()
 
             else:  # devops platform
                 for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
                     opt.add_argument(i)
                 # if driver not matching, download it
-                if service:
-                    self.driver = webdriver.Chrome(service=service)
-                else:
-                    self.driver = webdriver.Chrome(executable_path=self.executable_path, options=opt)
+                self.driver = webdriver.Chrome(executable_path=self.executable_path, options=opt)
             time.sleep(1)  # need it, eg.oppo star with user-dir
 
-        except (SessionNotCreatedException, WebDriverException):
+        except WebDriverException:
             from webdriver_manager.chrome import ChromeDriverManager
             from selenium.webdriver.chrome.service import Service as ChromeService
             new_path = ChromeDriverManager().install()
@@ -116,7 +103,8 @@ class WebDriver:
             shutil.copy(new_path, self.executable_path)
             if re_open:  # 说明第二次故障
                 raise EnvironmentError
-            return self.open_browser(service=ChromeService(executable_path=new_path), re_open=True)
+            self.executable_path = new_path
+            return self.open_browser(re_open=True)
         return self.driver
 
     def __highlight(self, ele):
@@ -157,7 +145,7 @@ class WebDriver:
         else:
             raise TypeError("you'd better write locator in xpath, such as '//div[@class='seliky']' -> %s" % locator_)
         try:
-            for i in range(int(timeout/2)):
+            for i in range(int(timeout / 2)):
                 if self.is_displayed(by=by, locator=locator_, timeout=2):
                     elems = self.driver.find_elements(by=by, value=locator_)
                     if index == 999:  # elem list
@@ -182,26 +170,28 @@ class WebDriver:
         if isinstance(locator, str):
             ele = self.__find_ele(locator, index, timeout, raise_, is_light=is_light)
             if ele:
-                log.info("☺ ✔ %s" % locator)
+                msg = "☺ ✔ %s" % locator
+                self.logger.info(msg) if self.logger else print(msg)
                 return ele
             else:
                 if raise_:
                     raise ValueError("Not find element %s, please check locator expression" % locator)
                 else:
                     if log_when_fail:
-                        log.error("☹ ✘ %s" % locator)
+                        msg = "☹ ✘ %s" % locator
+                        self.logger.error(msg) if self.logger else print(msg)
         elif isinstance(locator, list or tuple):
             timeout = int(timeout / len(locator)) + 2
             for i in locator:
                 ele = self.__find_ele(i, index, timeout)
                 if ele:
-                    warn_ = "☹ - the valid selector is %s, you can remove others in it's list" % i
-                    log.warning(warn_)
+                    msg = "☹ - the valid selector is %s, you can remove others in it's list" % i
+                    self.logger.warnning(msg) if self.logger else print(msg)
                     return ele
                 else:
                     if locator.index(i) == len(locator) - 1:
-                        error_ = "☹ ✘ no right ele in the locator list %s" % locator
-                        log.error(error_)
+                        msg = "☹ ✘ no right ele in the locator list %s" % locator
+                        self.logger.error(msg) if self.logger else print(msg)
                     else:
                         ...
         else:
@@ -224,8 +214,8 @@ class WebDriver:
                     return elem
                 except Exception as e:
                     if raise_ and i == 1:
-                        error_ = 'click failed %s, reason belows' % locator
-                        log.error(error_)
+                        msg = 'click failed %s, reason belows' % locator
+                        self.logger.error(msg) if self.logger else print(msg)
                         raise e
             elif i == 1 and raise_:
                 raise ValueError('no such ele %s' % locator)
@@ -255,8 +245,8 @@ class WebDriver:
             if raise_:
                 raise ValueError("ValueError: no such elem - %s" % locator)
             else:
-                error_ = 'no such elem - %s' % locator
-                log.error(error_)
+                msg = 'no such elem - %s' % locator
+                self.logger.error(msg) if self.logger else print(msg)
 
     def upload(self, locator: str, file_path: str, timeout=10):
         """
@@ -281,8 +271,8 @@ class WebDriver:
         try:
             sub_pop = subprocess.Popen(interpret_code)
         except FileNotFoundError:
-            error_ = "uploader path not found"
-            log.error(error_)
+            msg = "uploader path not found"
+            self.logger.error(msg) if self.logger else print(msg)
         try:
             sub_pop.wait(timeout)
         except subprocess.TimeoutExpired:
@@ -325,8 +315,8 @@ class WebDriver:
                 if raise_:
                     raise e
                 else:
-                    error_ = "click fail:" + str(e)
-                    log.error(error_)
+                    msg = "click fail:" + str(e)
+                    self.logger.error(msg) if self.logger else print(msg)
                 if not i:
                     time.sleep(1)
 
@@ -496,7 +486,7 @@ class WebDriver:
         Quits the driver and closes every associated window.
         """
         quit_ = "✌ ending..."
-        log.info(quit_)
+        self.logger.info(quit_) if self.logger else print(quit_)
         self.driver.quit()
 
     def close(self):
