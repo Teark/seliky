@@ -4,7 +4,6 @@
     <list default="true" id="5e16fa1b-8ccb-442e-9069-b1e08433aa80" name="Changes" comment="Changes">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/seliky/WebDriver.py" beforeDir="false" afterPath="$PROJECT_DIR$/seliky/WebDriver.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -181,6 +180,9 @@
       <workItem from="1666173728683" duration="729000" />
       <workItem from="1666174556160" duration="45000" />
       <workItem from="1666174799831" duration="838000" />
+      <workItem from="1666176286382" duration="226000" />
+      <workItem from="1666227195908" duration="2000" />
+      <workItem from="1666232610758" duration="494000" />
     </task>
     <servers />
   </component>

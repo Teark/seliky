@@ -12,6 +12,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.remote.webdriver import WebDriver as Wd
@@ -64,26 +65,38 @@ class WebDriver:
             if 'chrome' in self.executable_path:
                 browser_type = 'chrome'
                 opt = ChromeOptions()
-            else:
+            elif 'firefox' in self.executable_path:
                 browser_type = 'firefox'
                 opt = FirefoxOptions()
+            else:
+                browser_type = 'edge'
+                opt = EdgeOptions()
 
-            for i in self.options:
-                opt.add_argument(i)
+            if browser_type != 'edge':
+                for i in self.options:
+                    opt.add_argument(i)
 
-            if self.experimental_option:
-                opt.add_experimental_option('prefs', self.experimental_option)
+                if self.experimental_option:
+                    opt.add_experimental_option('prefs', self.experimental_option)
 
             if platform.system().lower() in ["windows", "macos"] and self.display:
                 if browser_type == 'chrome':
+                    from webdriver_manager.chrome import ChromeDriverManager as Manager
                     self.driver = webdriver.Chrome(
                         executable_path=self.executable_path,
                         options=opt
                     )
-                else:
+                elif browser_type == 'firefox':
+                    from webdriver_manager.firefox import GeckoDriverManager as Manager
                     self.driver = webdriver.Firefox(
                         executable_path=self.executable_path,
                         options=opt,
+                        service_log_path=os.devnull
+                    )
+                else:
+                    from webdriver_manager.microsoft import EdgeChromiumDriverManager as Manager
+                    self.driver = webdriver.Edge(
+                        executable_path=self.executable_path,
                         service_log_path=os.devnull
                     )
                 self.driver.maximize_window()
@@ -94,16 +107,14 @@ class WebDriver:
                 # if driver not matching, download it
                 self.driver = webdriver.Chrome(executable_path=self.executable_path, options=opt)
             time.sleep(1)  # need it, eg.oppo star with user-dir
-
         except WebDriverException:
-            from webdriver_manager.chrome import ChromeDriverManager
-            from selenium.webdriver.chrome.service import Service as ChromeService
-            new_path = ChromeDriverManager().install()
+            new_path = Manager().install()
             import shutil
-            shutil.copy(new_path, self.executable_path)
+            folder = self.executable_path[:self.executable_path.rindex('\\')]
+            shutil.copy(new_path, folder)
+            self.executable_path = folder + '\\' + new_path[new_path.rindex('\\')+1:]
             if re_open:  # 说明第二次故障
                 raise EnvironmentError
-            self.executable_path = new_path
             return self.open_browser(re_open=True)
         return self.driver
 
