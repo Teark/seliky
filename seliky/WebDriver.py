@@ -12,10 +12,11 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.remote.webdriver import WebDriver as Wd
+from webdriver_manager.chrome import ChromeDriverManager as Manager
+from selenium.webdriver.chrome.service import Service
 
 
 class WebDriver:
@@ -27,12 +28,12 @@ class WebDriver:
             display: bool = True,
             logger=None,  # loguru object
             options: list = '',
-            experimental_option='',
+            experimental_option: dict = '',
             highlight: float = 0.06,  # the same as mro
     ):
         """
-        :param display: weather show dynamic, False means headless mode
-        :param options: for add argument in driver, especial:
+        :param display: 是否以界面方式显示
+        :param options: 设置项，例如:
             '--headless'
             '--no-sandbox'
             '--disable-gpu'
@@ -41,14 +42,14 @@ class WebDriver:
             'blink-settings=imagesEnabled=False'
             'user-agent="MQQBrowser/26 Mozilla/5.0 ..."'
             'user-data-dir=C:\\Users\\Administrator\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache'
-        :param experimental_option: exp:
+        :param experimental_option: 特殊设置项，例如:
             prefs =
             {'profile.managed_default_content_settings.images': 2,
             'profile.default_content_settings.popups': 0,
              'download.default_directory': r'd:\'}
         """
         if highlight > 1:
-            raise AttributeError('highlight must be less than 1')
+            raise AttributeError('闪烁间隔必须小于1秒')
         self.highlight = highlight
         self.display = display
         self.options = options
@@ -59,69 +60,68 @@ class WebDriver:
 
     def open_browser(self, re_open=False):
         """
-        open a browser, default open chrome browser
+        打开浏览器，默认打开谷歌
         """
+        executable_path = self.executable_path.lower()
+        if 'chrome' in executable_path:
+            browser_type = 'chrome'
+            opt = ChromeOptions()
+            for i in self.options:
+                opt.add_argument(i)
+
+            if self.experimental_option:
+                opt.add_experimental_option('prefs', self.experimental_option)
+
+        else:
+            browser_type = 'firefox'
+            opt = FirefoxOptions()
+            for k, v in self.experimental_option.items():
+                opt.set_preference(k, v)
+
         try:
-            if 'chrome' in self.executable_path:
-                browser_type = 'chrome'
-                opt = ChromeOptions()
-            elif 'firefox' in self.executable_path:
-                browser_type = 'firefox'
-                opt = FirefoxOptions()
-            else:
-                browser_type = 'edge'
-                opt = EdgeOptions()
-
-            if browser_type != 'edge':
-                for i in self.options:
-                    opt.add_argument(i)
-
-                if self.experimental_option:
-                    opt.add_experimental_option('prefs', self.experimental_option)
-
             if platform.system().lower() in ["windows", "macos"] and self.display:
                 if browser_type == 'chrome':
-                    from webdriver_manager.chrome import ChromeDriverManager as Manager
                     self.driver = webdriver.Chrome(
                         executable_path=self.executable_path,
                         options=opt
                     )
-                elif browser_type == 'firefox':
-                    from webdriver_manager.firefox import GeckoDriverManager as Manager
+                else:
                     self.driver = webdriver.Firefox(
                         executable_path=self.executable_path,
                         options=opt,
                         service_log_path=os.devnull
                     )
-                else:
-                    from webdriver_manager.microsoft import EdgeChromiumDriverManager as Manager
-                    self.driver = webdriver.Edge(
-                        executable_path=self.executable_path,
-                        service_log_path=os.devnull
-                    )
                 self.driver.maximize_window()
 
-            else:  # devops platform
+            else:  # 无界面方式/流水线
                 for i in ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']:
                     opt.add_argument(i)
-                # if driver not matching, download it
-                self.driver = webdriver.Chrome(executable_path=self.executable_path, options=opt)
-            time.sleep(1)  # need it, eg.oppo star with user-dir
-        except WebDriverException:
-            new_path = Manager().install()
-            import shutil
-            folder = self.executable_path[:self.executable_path.rindex('\\')]
-            shutil.copy(new_path, folder)
-            self.executable_path = folder + '\\' + new_path[new_path.rindex('\\')+1:]
+                if browser_type == 'chrome':
+                    self.driver = webdriver.Chrome(executable_path=self.executable_path, options=opt)
+                else:
+                    self.driver = webdriver.Firefox(executable_path=self.executable_path, options=opt)
+            time.sleep(1)  # 有user-dir的时候需要等待一下
+        except WebDriverException as e:
+            print(e)
             if re_open:  # 说明第二次故障
                 raise EnvironmentError
+            new_path = Manager().install()
+            import shutil
+            try:
+                shutil.copy(new_path, self.executable_path)
+            except Exception:  # 可能报错：permission not allowed
+                ...
+            if browser_type == 'chrome':
+                self.driver = webdriver.Chrome(service=Service(new_path))  # 如此甚好，记得selenium>4.0.0
+            else:
+                raise ConnectionError('firefox的镜像需要手动下载，github访问不了...')
             return self.open_browser(re_open=True)
         return self.driver
 
     def __highlight(self, ele):
         """
-        highlight element in the page, and slower in step
-        :param ele: element locator
+        每一步的高亮
+        :param ele: ui element
         """
         if not self.highlight:
             return
@@ -144,17 +144,8 @@ class WebDriver:
         if locator_.startswith("/"):
             by = By.XPATH
             locator_ = locator_
-        elif locator_.startswith("xpath"):
-            by = By.XPATH
-            locator_ = locator_.index('=')
-        elif locator_.startswith("id"):
-            by = By.ID
-            locator_ = locator_[4:-1]
-        elif locator_.startswith("class"):
-            by = By.CLASS_NAME
-            locator_ = locator_[7:-1]
         else:
-            raise TypeError("you'd better write locator in xpath, such as '//div[@class='seliky']' -> %s" % locator_)
+            raise TypeError("请写xpath表达式，例如 '//div[@class='seliky']' -> %s" % locator_)
         try:
             for i in range(int(timeout / 2)):
                 if self.is_displayed(by=by, locator=locator_, timeout=2):
@@ -176,7 +167,7 @@ class WebDriver:
 
     def __ele(self, locator, index=0, timeout=10, raise_=True, log_when_fail=True, is_light=True):
         """
-        Find elements by its location
+        查找元素
         """
         if isinstance(locator, str):
             ele = self.__find_ele(locator, index, timeout, raise_, is_light=is_light)
@@ -186,7 +177,7 @@ class WebDriver:
                 return ele
             else:
                 if raise_:
-                    raise ValueError("Not find element %s, please check locator expression" % locator)
+                    raise ValueError("没找到元素 %s, 请检查表达式" % locator)
                 else:
                     if log_when_fail:
                         msg = "☹ ✘ %s" % locator
@@ -196,22 +187,19 @@ class WebDriver:
             for i in locator:
                 ele = self.__find_ele(i, index, timeout)
                 if ele:
-                    msg = "☹ - the valid selector is %s, you can remove others in it's list" % i
+                    msg = "☹ - 有效元素为 %s, 你可以把元素列表中的其他元素删了" % i
                     self.logger.warnning(msg) if self.logger else print(msg)
                     return ele
-                else:
-                    if locator.index(i) == len(locator) - 1:
-                        msg = "☹ ✘ no right ele in the locator list %s" % locator
-                        self.logger.error(msg) if self.logger else print(msg)
-                    else:
-                        ...
+                elif locator.index(i) == len(locator) - 1:
+                    msg = "☹ ✘ 元素列表中没有有效元素 %s" % locator
+                    self.logger.error(msg) if self.logger else print(msg)
         else:
-            raise TypeError("locator must be str or iterable type %s" % locator)
+            raise TypeError
 
     def click(self, locator, index: int = 0, timeout=10,
               pre_sleep=0.1, bac_sleep=0.1, raise_: bool = True):
         """
-        click element
+        点击元素
         """
         time.sleep(pre_sleep)
         for i in range(2):
@@ -225,20 +213,17 @@ class WebDriver:
                     return elem
                 except Exception as e:
                     if raise_ and i == 1:
-                        msg = 'click failed %s, reason belows' % locator
+                        msg = '点击失败 %s, 因为：' % locator
                         self.logger.error(msg) if self.logger else print(msg)
                         raise e
             elif i == 1 and raise_:
-                raise ValueError('no such ele %s' % locator)
+                raise ValueError('没有此元素：%s' % locator)
 
     def send_keys(self, locator, value,
                   index: int = 0, timeout: int = 10, clear: bool = True,
                   pre_sleep=0, bac_sleep=0, raise_=True, enter=False):
         """
-        Send value to input box
-
-        Usage:
-            driver.send_keys("id=kw", "hello")
+        输入框输入值，上传请用upload方法
         """
         time.sleep(pre_sleep)
         elem = self.__ele(locator, index, timeout, raise_=raise_)
@@ -253,27 +238,26 @@ class WebDriver:
                 elem.send_keys(Keys.ENTER)
             time.sleep(bac_sleep)
         else:
+            msg = '没有此元素：%s' % locator
             if raise_:
-                raise ValueError("ValueError: no such elem - %s" % locator)
+                raise ValueError(msg)
             else:
-                msg = 'no such elem - %s' % locator
                 self.logger.error(msg) if self.logger else print(msg)
 
-    def upload(self, locator: str, file_path: str, timeout=10):
+    def upload(self, locator: str, file_path: str, index=0, timeout=10):
         """
-        upload in traditional way: send files to input label
+        上传，内部还是send_keys
         """
-        elem = self.__ele(locator, 0, timeout)
+        elem = self.__ele(locator, index, timeout)
         if elem:
             elem.send_keys(file_path)
             time.sleep(timeout)
         else:
-            raise ValueError("ValueError: no such elem - %s" % locator)
+            raise ValueError('没有此元素：%s' % locator)
 
     def upload_with_autoit(self, file_path: str, uploader, timeout=10):
         """
-        After wake-up system upload pop-up window，Call this method to upload files
-        this is au3 script by autoit:
+        调用上传器，上传器exe 内部是通过 autoit制作的au3脚本
         """
         params = [uploader, file_path]
         interpret_code = reduce(lambda a, b: '{0} {1}'.format(str(a), '"{}"'.format(str(b))), params)
@@ -282,7 +266,7 @@ class WebDriver:
         try:
             sub_pop = subprocess.Popen(interpret_code)
         except FileNotFoundError:
-            msg = "uploader path not found"
+            msg = "上传器路径没找到"
             self.logger.error(msg) if self.logger else print(msg)
         try:
             sub_pop.wait(timeout)
@@ -294,7 +278,7 @@ class WebDriver:
 
     def is_displayed(self, locator: str, by='xpath', timeout: int = 10):
         """
-        weather the element is displayed in html dom
+        是否展示在 html dom 里
         """
         try:
             ele = WebDriverWait(self.driver, timeout).until(
@@ -305,7 +289,7 @@ class WebDriver:
 
     def is_visible(self, locator: str, by='xpath', timeout=10):
         """
-        weather the element is visible, css not hidden, return a bool
+        是否可见，css非隐藏
         """
         try:
             ele = WebDriverWait(self.driver, timeout).until(
@@ -326,14 +310,14 @@ class WebDriver:
                 if raise_:
                     raise e
                 else:
-                    msg = "click fail:" + str(e)
+                    msg = "点击异常：" + str(e)
                     self.logger.error(msg) if self.logger else print(msg)
                 if not i:
                     time.sleep(1)
 
     def window_scroll(self, width=None, height=None):
         """
-        Synchronously Executes JavaScript in the current window/frame, and there are more method to achieve
+        很多方法可以实现
         self.execute_script("var q=document.documentElement.scrollTop=0")
         time.sleep(1)
         self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
@@ -365,7 +349,7 @@ class WebDriver:
 
     def add_cookies(self, file_path: str):
         """
-        add cookie from file
+        通过文件读取cookies
         """
         with open(file_path, "r") as f:
             ck = f.read()
@@ -374,11 +358,11 @@ class WebDriver:
             for cookie in cookie_list:
                 self.driver.add_cookie(cookie)
         else:
-            raise TypeError("Wrong cookies type, it must be a list")
+            raise TypeError("cookies类型错误，它是个列表")
 
     def save_cookies(self, file_path: str):
         """
-        save cookies in file
+        把cookies保存到文件
         """
         ck = self.driver.get_cookies()
         with open(file_path, 'w') as f:
@@ -402,8 +386,8 @@ class WebDriver:
 
     def stretch(self, size=0.8):
         """
-        Zoom in or out of the page
-        :param size: percentage of zoom in or out
+        页面放大/缩小
+        :param size: 放大/缩小百分比
         """
         js = "document.body.style.zoom='{}'".format(size)
         self.driver.execute_script(js)
@@ -413,17 +397,14 @@ class WebDriver:
 
     def text(self, locator, index=0, timeout=6):
         """
-        The text of the element
-
-        Usage:
-            driver.text(id=su)
+        元素的文本
         """
         elem = self.__ele(locator, index, timeout=timeout, is_light=False)  # 爬虫中获取text，去掉高亮不然太浪费时间。
         return elem.text
 
     def clear(self, locator, index=0):
         """
-        clear a input box
+        清空输入框
         """
         elem = self.__ele(locator, index)
         return elem.clear()
@@ -434,7 +415,7 @@ class WebDriver:
 
     def is_selected(self, locator, index=0):
         """
-        whether the element is selected, return a bool, Can be used to check if a checkbox or radio button is selected.
+        可以用来检查 checkbox or radio button 是否被选中
         To reader:
         This kind of judgment will be added to judge whether or not. Why not add others?
         It will report an error, but whether to return yes or no instead of returning an error
@@ -447,7 +428,7 @@ class WebDriver:
 
     def is_enable(self, locator, index=0, timeout=10):
         """
-        weather clickable
+        是否可点击
         """
         elem = self.__ele(locator, index)
         for i in range(timeout):
@@ -459,25 +440,19 @@ class WebDriver:
 
     def get(self, uri):
         """
-        Request a page
-        :param uri: url of the page
-
-        Usage:
-            driver.get("https://www.baidu.com")
+        请求url
         """
         return self.driver.get(uri)
 
     def title(self):
         """
-        Returns the title of the current page.
+        当前tab页标题
         """
         return self.driver.title
 
     def save_screenshot(self, path=None, filename=None):
         """
-        Saves a screenshot of the current window to a PNG image file. Returns
-           False if there is any IOError, else returns True. Use full paths in
-           your filename.
+        截图
         """
         if path is None:
             path = os.getcwd()
@@ -488,13 +463,13 @@ class WebDriver:
 
     def current_url(self):
         """
-        Gets the URL of the current page.
+        当前地址
         """
         return self.driver.current_url
 
     def quit(self):
         """
-        Quits the driver and closes every associated window.
+        退出
         """
         quit_ = "✌ ending..."
         self.logger.info(quit_) if self.logger else print(quit_)
@@ -505,7 +480,7 @@ class WebDriver:
 
     def maximize_window(self):
         """
-        Maximizes the current window that webdriver is using
+        最大化
         """
         return self.driver.maximize_window()
 
@@ -528,7 +503,7 @@ class WebDriver:
 
     def back(self):
         """
-        Goes one step backward in the browser history.
+        返回历史记录的前一步
         """
         return self.driver.back()
 
@@ -537,45 +512,32 @@ class WebDriver:
 
     def forward(self):
         """
-        Goes one step forward in the browser history.
+        前进历史记录的后一步
         """
         return self.driver.forward()
 
     def refresh(self):
         """
-        Refreshes the current page.
+        刷新
         """
         return self.driver.refresh()
 
     def switch_to_frame(self, frame_reference):
         """
-        Switches focus to the specified frame, by index, name, or webelement.
+        切换到frame
         """
         self.driver.switch_to.frame(frame_reference)
 
     def switch_to_parent_frame(self):
-        """
-        Switches focus to the parent context. If the current context is the top
-        level browsing context, the context remains unchanged.
-        """
         self.driver.switch_to.parent_frame()
 
     def window_handles(self):
-        """
-        Returns the handles of all windows within the current session.
-        """
         return self.driver.window_handles
 
     def new_window_handle(self):
-        """
-        open a new tag
-        """
         return self.window_handles()[-1]
 
     def switch_to_window(self, handle):
-        """
-        Switches focus to the specified window.
-        """
         if handle == 0:
             handle = self.driver.window_handles[0]
         elif handle == 1:
@@ -583,22 +545,13 @@ class WebDriver:
         self.driver.switch_to.window(handle)
 
     def dismiss_alert(self):
-        """
-        Dismisses the alert available.
-        """
         self.driver.switch_to.alert.dismiss()
 
     @property
     def get_alert_text(self):
-        """
-        switch to alert then get it's text
-        """
         return self.driver.switch_to.alert.text
 
     def submit(self, locator):
-        """
-        Submits a form
-        """
         elem = self.__ele(locator)
         elem.submit()
 
@@ -647,8 +600,8 @@ class WebDriver:
 
     def refresh_element(self, locator):
         elem = self.__ele(locator)
-        for i in range(6):
-            if elem is not None:
+        for i in range(3):
+            if elem:
                 try:
                     elem
                 except StaleElementReferenceException:
@@ -658,7 +611,7 @@ class WebDriver:
             else:
                 time.sleep(1)
         else:
-            raise TimeoutError("element is not attached to the page document.")
+            raise TimeoutError("元素还没抵达页面")
 
     @staticmethod
     def select_by_value(elem, value):
@@ -678,10 +631,10 @@ class WebDriver:
 
     def execute_script(self, js=None, *args):
         """
-        Execute JavaScript scripts.
+        执行js
         """
         if js is None:
-            raise ValueError("Please input js script")
+            raise ValueError("请输入js")
         return self.driver.execute_script(js, *args)
 
     def enter(self, locator):
