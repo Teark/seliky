@@ -140,15 +140,14 @@ class WebDriver:
                 pass
 
     def __find_ele(self, locator_, index: int = 0, timeout: int = 10, raise_=True, is_light=True):
-        time.sleep(0.1)
         if locator_.startswith("/"):
             by = By.XPATH
             locator_ = locator_
         else:
             raise TypeError("请写xpath表达式，例如 '//div[@class='seliky']' -> %s" % locator_)
         try:
-            for i in range(int(timeout / 2)):
-                if self.is_displayed(by=by, locator=locator_, timeout=2):
+            for i in [5 for _ in range(timeout//5)] + [timeout % 5]:
+                if self.is_visible(by=by, locator=locator_, timeout=i):
                     elems = self.driver.find_elements(by=by, value=locator_)
                     if index == 999:  # elem list
                         elem = elems
@@ -165,7 +164,7 @@ class WebDriver:
             if raise_:
                 raise e
 
-    def __ele(self, locator, index=0, timeout=10, raise_=True, log_when_fail=True, is_light=True):
+    def __ele(self, locator, index=0, timeout=10, raise_=True, is_light=True):
         """
         查找元素
         """
@@ -179,9 +178,8 @@ class WebDriver:
                 if raise_:
                     raise ValueError("没找到元素 %s, 请检查表达式" % locator)
                 else:
-                    if log_when_fail:
-                        msg = "☹ ✘ %s" % locator
-                        self.logger.error(msg) if self.logger else print(msg)
+                    msg = "☹ ✘ %s" % locator
+                    self.logger.error(msg) if self.logger else print(msg)
         elif isinstance(locator, list or tuple):
             timeout = int(timeout / len(locator)) + 2
             for i in locator:
@@ -196,28 +194,29 @@ class WebDriver:
         else:
             raise TypeError
 
-    def click(self, locator, index: int = 0, timeout=10,
+    def click(self, locator, index: int = 0, timeout=20,
               pre_sleep=0.1, bac_sleep=0.1, raise_: bool = True):
         """
         点击元素
         """
         time.sleep(pre_sleep)
-        for i in range(2):
-            elem = self.__ele(locator, index, timeout, raise_)
-            if elem:
-                try:
-                    time.sleep(0.1)
-                    elem.click()
-                    if not i:
-                        time.sleep(bac_sleep)
-                    return elem
-                except Exception as e:
-                    if raise_ and i == 1:
-                        msg = '点击失败 %s, 因为：' % locator
-                        self.logger.error(msg) if self.logger else print(msg)
-                        raise e
-            elif i == 1 and raise_:
-                raise ValueError('没有此元素：%s' % locator)
+        elem = self.__ele(locator, index, timeout, raise_)
+        if elem:
+            try:
+                elem.click()
+                time.sleep(bac_sleep)
+                return elem
+            except Exception as e:
+                msg = '点击 %s 出现异常' % locator
+                self.logger.error(msg) if self.logger else print(msg)
+                if raise_:
+                    raise e
+                else:
+                    return None
+        else:
+            msg = '没有此元素：%s' % locator
+            self.logger.error(msg) if self.logger else print(msg)
+            return None
 
     def send_keys(self, locator, value,
                   index: int = 0, timeout: int = 10, clear: bool = True,
