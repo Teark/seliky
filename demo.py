@@ -1,5 +1,5 @@
 import time
-from seliky.WebDriver import WebDriver
+from seliky.seliky import WebDriver
 
 
 class Page:
