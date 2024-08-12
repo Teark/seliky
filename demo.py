@@ -1,7 +1,6 @@
 import time
 from seliky.seliky import WebDriver
 
-
 class Page:
     """元素定位和界面信息"""
     baidu_url = "http://www.baidu.com"
@@ -37,3 +36,15 @@ def test_baidu():
 
 if __name__ == '__main__':
     test_baidu()
+
+"""
+依次执行以下命令即可：
+
+　　升级工具：python -m pip install --user --upgrade setuptools wheel
+
+　　生成包：python setup.py sdist bdist_wheel
+
+　　安装上传模块：python -m pip install --user --upgrade twine
+
+　　上传自己的库：python -m twine upload dist/*
+"""

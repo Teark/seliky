@@ -2,16 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5e16fa1b-8ccb-442e-9069-b1e08433aa80" name="Changes" comment="Changes">
-      <change afterPath="$PROJECT_DIR$/seliky/base.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/seliky/logger.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.pypirc" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/seliky.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/seliky.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/demo.py" beforeDir="false" afterPath="$PROJECT_DIR$/demo.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/seliky/WebDriver.py" beforeDir="false" afterPath="$PROJECT_DIR$/seliky/seliky.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/seliky/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/seliky/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/seliky/utils.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/seliky/兼容rf.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/demo2.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/seliky/seliky.py" beforeDir="false" afterPath="$PROJECT_DIR$/seliky/seliky.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -52,18 +49,18 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$USER_HOME$/Desktop/demo" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/seliky" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Project\seliky\seliky" />
+      <recent name="D:\项目\seliky\seliky" />
       <recent name="D:\seliky\seliky" />
       <recent name="D:\Project\seliky" />
-      <recent name="D:\Project\seliky\seliky" />
       <recent name="C:\Users\Administrator\Desktop\seliky\seliky" />
-      <recent name="C:\Users\Administrator\Desktop\seliky" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\seliky\seliky" />
@@ -210,6 +207,14 @@
       <workItem from="1666334476365" duration="965000" />
       <workItem from="1710483846601" duration="5265000" />
       <workItem from="1710576449177" duration="145000" />
+      <workItem from="1717462621222" duration="385000" />
+      <workItem from="1717463022470" duration="944000" />
+      <workItem from="1717464326439" duration="1752000" />
+      <workItem from="1717466119187" duration="1531000" />
+      <workItem from="1717469140196" duration="23000" />
+      <workItem from="1717469375284" duration="9000" />
+      <workItem from="1719460438151" duration="187000" />
+      <workItem from="1723429616270" duration="971000" />
     </task>
     <servers />
   </component>
@@ -233,7 +238,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/demo.py</url>
-          <line>4</line>
+          <line>3</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
       </breakpoints>
