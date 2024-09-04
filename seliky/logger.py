@@ -2,7 +2,6 @@ import sys
 import os
 import time
 from loguru import logger as log
-from .seliky import WebDriver, Upload, Utils
 
 
 # 日志设置

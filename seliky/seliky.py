@@ -422,7 +422,7 @@ class WebDriver:
         """
         输入框输入值，上传请用upload方法
         """
-        if value is None or value is '':  # 0可以有
+        if not value and value != 0:  # 0可以有
             return
         time.sleep(pre_sleep)
 
@@ -709,9 +709,9 @@ class WebDriver:
             self.select_all(elem)
             self.backspace(elem)
 
-    def get_attribute(self, name, locator, index=0, raise_=True):
+    def get_attribute(self, name, locator, index=0, raise_=True, pre_sleep=0):
         """获取元素内部属性"""
-        elem = self._ele_(locator, index, timeout=3, raise_=raise_, pre_sleep=0.5)
+        elem = self._ele_(locator, index, timeout=3, raise_=raise_, pre_sleep=pre_sleep)
         if elem:
             return elem.get_attribute(name)
 
@@ -776,6 +776,11 @@ class WebDriver:
         """当前地址"""
         return self.driver.current_url
 
+    @property
+    def page_source(self):
+        """页面html"""
+        return self.driver.page_source
+
     def quit(self):
         """退出"""
         try:
@@ -783,7 +788,7 @@ class WebDriver:
         except Exception:
             ...  # 'WebDriver' object has no attribute 'driver'，无伤大雅
         quit_ = "✌ 退出浏览器..."
-        self.driver = None  # 销毁driver
+        self.driver: Wd  = None  # 销毁driver
         self.logger.info(quit_) if self.logger else print(quit_)
 
     def close(self):
@@ -1065,11 +1070,9 @@ class WebDriver:
         """按下 Esc 键"""
         ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
 
-    def press(self, key: str):
+    def press(self, *keys):
         """按下 自定义 键"""
-        if key.upper() not in Keys.__dict__.keys():
-            raise ValueError
-        ActionChains(self.driver).send_keys(Keys.__dict__[key.upper()]).perform()
+        self.switch_to.active_element.send_keys(*keys)
 
     @staticmethod
     def select_by_value(elem, value):

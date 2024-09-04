@@ -1,48 +1,32 @@
-<h2>English Introduction</h2>
+### seliky-史上最佳UI自动化测试库
 
-<h2>3 minutes to learn about seliky</h2>
+​		seliky致力于做好UI自动化中的页面逻辑部分，在原生selenium的基础上做了完美的封装，可以是selenium及其封装库的平替，它的主要特性如下：
 
-<h4> seliky: born for UI automation. A selenium encapsulation library is simpler and easier to use than the native syntax. Its main features are as follows:</h4>
+------
 
-<hr>
+1. **极致简约，学习简单**
+   - 作者把大量复杂、冗余的操作进行了完美的封装，写代码时调用的语句非常简约干净。
+   - 大量降低了学习成本，使用者无需了解selinium内在机制，甚至无需掌握python。
+2. **元素高亮**
+   - 元素在交互时默认高亮闪烁，这一特效方便在执行时观察页面。
+   - 在无界面时默认关闭。
+3. **交互稳定**
+   - 原生selenium最大的弊病就是不稳定找不到元素，明明元素就在页面。seliky的交互机制通过最大耗时计算巧妙又精确的解决了元素就在页面但找不到的问题。
+   - 多重机制保障稳定性。核心方法如 click-点击、send_keys-输入值都使用多套机制，所以才稳定好用。
+4. **统一采用xpath定位**
+   - 不同的定位符的管理一直是业内通病，为方便管理，seliky统一采用xpath定位。
+   - 这个大胆的设计源于吾先后在多家大厂调研得已验证，做ui自动化掌握好xpath这种万能定位足够了。
+5. **无侵入式封装**
+   - 有很多优秀的封装库，把selinium的原生方法干没了，这是多大的自信。
+   - seliky是在selinium的基础之上做的封装，丝毫不影响交互中使用原生方法，有利于熟悉了原生的用户无缝切换过来。
+6. **新版优势**
+   - 有很多优秀的封装库是基于selenium3甚至selenium2来封装的，导致最新版的特性没体现出来。seliky基于selenium4来做的，具有后发优势。
+   - 自动下载driver，seliky在早期（2022年）就已经支持自动下载driver，当时原生的是不支持的，可见吾敏锐的前瞻意识。后来selenium4支持了自动下载driver，吾也就进行了融合。
+7. **GRID分布式化繁为简**
+   - grid分布式搭建一直是复杂而琐碎的，而且有很多公司并不需要做ui自动化的兼容性，这一块很多自动化人员也不太重视。即便如此，吾还是进行了整合，只需要准备好jar包即可，通过remote_location参数实现了从机的控制。一大堆的配置变成了一个参数，实现了grid分布式化繁为简。
+8. **兼容robotframework框架**
+   - 还有公司使用RF框架的，可以使用seliky作为selinium的平替。
 
-#### 1. It supports elastic positioning and can deal with finite and changeable elements
+------
 
-#### 2. The current element will highlight and flash. When executing, you can see which element is clicked with the naked eye
-
-#### 3. Compatible with robot framework
-
-#### 4. Encapsulate a large number of common forms in UI automation, which can be directly used in the project directly
-
-#### 5. When the driver version does not match, the driver will be automatically downloaded
-
-#### 6. More stable positioning mechanism, waiting mechanism, etc.
-
-
-<hr>
-
-See the built-in case demo.py to learn more... <br>
-Installation method: pip install seliky - i https://pypi.org/simple
-
-<br><br><br>
-<h2> 中文介绍</h2>
-<h2> 3 分钟了解 seliky</h2>
-
-<h4>seliky：为ui自动化而生。一个selenium封装库，比起原生语法更简单好用，主要特性如下：</h4>
-<hr>
-
-#### 1. 支持弹性定位，可以应对有穷性可变化的元素
-
-#### 2. 当前元素会高亮闪烁。在执行时能够肉眼看到点了哪个元素
-
-#### 3. 可兼容robotframework框架
-
-#### 4. 封装大量ui自动化中的通用形式，可在项目中直接运用无需再写
-
-#### 5. 当driver版本不匹配时，会自动下载driver
-
-#### 6. 更加稳定的定位机制、等待机制等
-
-<hr>
-查看内置案例 demo.py 了解更多...<br>
-安装方式：pip install seliky -i https://pypi.org/simple
+更多其它好用的特性，尽在seliky，使用 pip install seliky 来体验吧...
