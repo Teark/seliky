@@ -2,18 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5e16fa1b-8ccb-442e-9069-b1e08433aa80" name="Changes" comment="Changes">
+      <change afterPath="$PROJECT_DIR$/demo_dri.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/seliky/seliky_dri.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/seliky.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/seliky.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Pipfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Pipfile.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.pypirc" beforeDir="false" afterPath="$PROJECT_DIR$/.pypirc" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo.py" beforeDir="false" afterPath="$PROJECT_DIR$/demo.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/seliky/ExcelLibrary.txt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/seliky/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/seliky/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/seliky/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/seliky/logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/seliky/logger.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/seliky/seliky.py" beforeDir="false" afterPath="$PROJECT_DIR$/seliky/seliky.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
     </list>
@@ -60,6 +55,7 @@
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="restartRequiresConfirmation" value="false" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="vue.rearranger.settings.migration" value="true" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -76,7 +72,7 @@
       <recent name="C:\Users\Administrator\Desktop\seliky\seliky" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.demo">
+  <component name="RunManager" selected="Python.demo_dri">
     <configuration name="demo" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="seliky" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -143,8 +139,31 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="demo_dri" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="seliky" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/demo_dri.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.demo_dri" />
         <item itemvalue="Python.demo" />
         <item itemvalue="Python.demo3" />
         <item itemvalue="Python.demo2" />
@@ -249,7 +268,37 @@
       <workItem from="1724318362038" duration="778000" />
       <workItem from="1725327461728" duration="3805000" />
       <workItem from="1725412289104" duration="6000" />
-      <workItem from="1725412299623" duration="2826000" />
+      <workItem from="1725412299623" duration="3095000" />
+      <workItem from="1725864287572" duration="951000" />
+      <workItem from="1726026232020" duration="1034000" />
+      <workItem from="1728375979670" duration="1092000" />
+      <workItem from="1728377133978" duration="1439000" />
+      <workItem from="1729243308477" duration="1925000" />
+      <workItem from="1729475398341" duration="954000" />
+      <workItem from="1738811353163" duration="2164000" />
+      <workItem from="1738819947866" duration="307000" />
+      <workItem from="1741067374195" duration="534000" />
+      <workItem from="1742177373487" duration="155000" />
+      <workItem from="1742951070149" duration="3437000" />
+      <workItem from="1742960525741" duration="4893000" />
+      <workItem from="1742976844229" duration="2417000" />
+      <workItem from="1743043099758" duration="1355000" />
+      <workItem from="1743044715080" duration="638000" />
+      <workItem from="1743068698286" duration="133000" />
+      <workItem from="1743068954881" duration="688000" />
+      <workItem from="1743123103770" duration="611000" />
+      <workItem from="1743127698726" duration="7000" />
+      <workItem from="1743151233398" duration="25000" />
+      <workItem from="1743648468251" duration="544000" />
+      <workItem from="1744254903189" duration="168000" />
+      <workItem from="1745308379227" duration="44000" />
+      <workItem from="1745308503284" duration="5000" />
+      <workItem from="1745723589215" duration="372000" />
+      <workItem from="1745724633044" duration="9000" />
+      <workItem from="1745896862136" duration="602000" />
+      <workItem from="1745904515617" duration="9000" />
+      <workItem from="1747374623716" duration="6000" />
+      <workItem from="1749115338738" duration="1425000" />
     </task>
     <task id="LOCAL-00001" summary="Changes">
       <created>1723430821456</created>
@@ -258,7 +307,14 @@
       <option name="project" value="LOCAL" />
       <updated>1723430821456</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Changes">
+      <created>1725416194878</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1725416194878</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -288,12 +344,23 @@
           <line>8</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/demo_dri.py</url>
+          <line>10</line>
+          <option name="timeStamp" value="7" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/seliky/seliky_dri.py</url>
+          <line>189</line>
+          <option name="timeStamp" value="8" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/seliky$demo2.coverage" NAME="demo2 Coverage Results" MODIFIED="1666252482186" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/seliky$demo_dri.coverage" NAME="demo_dri Coverage Results" MODIFIED="1742954649512" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/seliky$demo.coverage" NAME="demo Coverage Results" MODIFIED="1725330906821" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/seliky$demo3.coverage" NAME="demo3 Coverage Results" MODIFIED="1725330590059" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/seliky$demo2.coverage" NAME="demo2 Coverage Results" MODIFIED="1666252482186" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

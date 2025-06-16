@@ -1,3 +1,4 @@
 .pypirc
-demo*
+demo.py
 base.py
+.idea

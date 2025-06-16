@@ -9,7 +9,6 @@ from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support.select import Select
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.edge.options import Options as EdgeOptions
@@ -125,6 +124,8 @@ class WebDriver:
         opt.binary_location = self.remote_location
         exist_driver = True
         if not os.path.exists(executable_path) or not executable_path:
+            msg = '❕ chromedriver路径不存在，正在下载中...'
+            self.logger.info(msg) if self.logger else print(msg)
             exist_driver = False  # 有的放在python目录下就无需配置
 
         # grid方式：必须可见，内部通过option对象区分浏览器类型
@@ -136,7 +137,8 @@ class WebDriver:
                 self.driver = webdriver.Remote(command_executor=remote_url, options=opt)
                 self.driver.maximize_window()
             except Exception as e:
-                print("✘ grid远程失败，请检查url、opt")
+                msg = "✘ grid远程失败，请检查url、opt"
+                self.logger.info(msg) if self.logger else print(msg)
                 raise e
         else:
             try:
@@ -260,8 +262,11 @@ class WebDriver:
                     time.sleep(0.66)
                     continue
                 # 数据清洗
+                count = kwargs.get('count')  # 虽然这里没给，但里面有判断
                 if index == 999:  # 999为元素列表
                     elem = elems
+                    if len(elem) == 1:  # 给is_visible留的多元素的1个时也亮
+                        self.__highlight__(elem[0], count=count)
                 elif not index and len(elems) > 1 and use_location:  # 无索引且有多个元素时，-1时不用清洗
                     elem = self._filter_(elems)
                     if not elem:
@@ -270,7 +275,6 @@ class WebDriver:
                     elem = elem[0]
                 else:  # 有索引的
                     elem = elems[index]
-                    count = kwargs.get('count')  # 虽然这里没给，但里面有判断
                     self.__highlight__(elem, count=count)
                 return elem
         except Exception as e:
@@ -347,12 +351,15 @@ class WebDriver:
             if raise_:
                 raise ValueError("没找到元素 %s, 请检查表达式" % locator)
 
-    def click(self, locator, index: int = 0, timeout=8, pre_sleep=SLEEP, bac_sleep=SLEEP, raise_: bool = True,
-              vague=False):
+    def click(self, locator, index: int = 0, timeout=8, **kwargs):
         """
         点击元素
         关于sleep：前后加起来0.1秒，提升页面加载容错性，视觉停留只是其次，0.05是最低最合适的值
         """
+        pre_sleep = kwargs.get('pre_sleep', self.SLEEP)
+        bac_sleep = kwargs.get('bac_sleep', self.SLEEP)
+        raise_ = kwargs.get('raise_', True)
+        vague = kwargs.get('vague', False)
         time.sleep(pre_sleep)
         elem = self._ele_(locator, index, timeout, raise_=raise_, vague=vague)
         try:
@@ -411,23 +418,28 @@ class WebDriver:
             return
         kw = locator.rfind('=') + 2
         if locator[kw:kw + 1] in ['确', '是', '搜', '创', '新']:
-            time.sleep(1)  # 触发事务后等1秒
+            time.sleep(1)  # 一般点完确定后会有个加载过程
 
     def ac_click(self, locator, index=0):
         """鼠标点击"""
         return self.move_to_element(locator=locator, index=index, click=True)
 
-    def send_keys(self, locator, value, index: int = 0, timeout: int = 6, clear: bool = True,
-                  pre_sleep=SLEEP, bac_sleep=SLEEP, enter=False, active=False):
+    def send_keys(self, locator, value, index: int = 0, timeout: int = 6, clear: bool = True, enter=False, **kwargs):
         """
         输入框输入值，上传请用upload方法
+        clear：输入前是否清空
+        enter：输入后是否回车
         """
+        pre_sleep = kwargs.get('pre_sleep', self.SLEEP)
+        bac_sleep = kwargs.get('bac_sleep', 0.5)
+        active = kwargs.get('active', False)  # 是否为活动元素输入，针对非常规输入框需要点一下激活再输入
+
         if not value and value != 0:  # 0可以有
             return
         time.sleep(pre_sleep)
 
         def normal_send():
-            elem = self._ele_(locator, index, timeout, raise_=False)
+            elem = self._ele_(locator, index, timeout, raise_=False, logged=False)
             if not elem:
                 return False
             if clear:
@@ -472,8 +484,7 @@ class WebDriver:
                 return False
             self.__bac_force_sleep__(locator)
             return True
-
-        locator_, desc = self._locator_(" $当前活动的对象")
+        locator_, desc = self._locator_(locator)
         msg = '✔ 输入 ' + desc + ' ' + str(value)
         if not locator or active:
             return active_send()
@@ -495,7 +506,7 @@ class WebDriver:
         ups.doing(file_path=file_path, timeout=timeout)
         ups.close_if_opened()
 
-    def is_displayed(self, locator, timeout: int = 3, by='xpath'):
+    def is_displayed(self, locator, timeout: int = 3):
         """
         是否展示在 html dom 里
         """
@@ -508,7 +519,7 @@ class WebDriver:
 
         try:
             ele = WebDriverWait(self.driver, timeout).until(
-                ec.presence_of_element_located((by, locator)))
+                ec.presence_of_element_located(('xpath', locator)))
             flag = '✔ 已加载 '
         except TimeoutException:
             ele = False
@@ -581,10 +592,13 @@ class WebDriver:
             Utils.caption(msg=desc)
         return is_show
 
-    def js_click(self, locator, index=0, timeout=8, pre_sleep=SLEEP, bac_sleep=SLEEP, raise_=False):
+    def js_click(self, locator, index=0, timeout=8, **kwargs):
         """
         以js的形式点击
         """
+        pre_sleep = kwargs.get('pre_sleep', self.SLEEP)
+        bac_sleep = kwargs.get('bac_sleep', self.SLEEP)
+        raise_ = kwargs.get('raise_', False)
         time.sleep(pre_sleep)
         try:
             elem = self._ele_(locator, index=index, timeout=timeout)
@@ -709,8 +723,10 @@ class WebDriver:
             self.select_all(elem)
             self.backspace(elem)
 
-    def get_attribute(self, name, locator, index=0, raise_=True, pre_sleep=0):
-        """获取元素内部属性"""
+    def get_attribute(self, name, locator, index=0, **kwargs):
+        """获取元素属性"""
+        pre_sleep = kwargs.get('pre_sleep', self.SLEEP)
+        raise_ = kwargs.get('raise_', False)
         elem = self._ele_(locator, index, timeout=3, raise_=raise_, pre_sleep=pre_sleep)
         if elem:
             return elem.get_attribute(name)
@@ -720,9 +736,9 @@ class WebDriver:
         elem = self._ele_(locator, index=index, pre_sleep=0.5)
         return elem.get_property(name)
 
-    def get_css_property(self, name, locator, index=0, raise_=True):
+    def get_css_property(self, name, locator, index=0):
         """获取样式"""
-        elem = self._ele_(locator, index, timeout=3, raise_=raise_, pre_sleep=0.5)
+        elem = self._ele_(locator, index, timeout=3, pre_sleep=0.5)
         return elem.value_of_css_property(name)
 
     def is_selected(self, locator, index=0):
@@ -788,7 +804,7 @@ class WebDriver:
         except Exception:
             ...  # 'WebDriver' object has no attribute 'driver'，无伤大雅
         quit_ = "✌ 退出浏览器..."
-        self.driver: Wd  = None  # 销毁driver
+        self.driver: Wd = None  # 销毁driver
         self.logger.info(quit_) if self.logger else print(quit_)
 
     def close(self):
@@ -999,6 +1015,10 @@ class WebDriver:
         """执行js"""
         return self.driver.execute_script(js, *args)
 
+    @property
+    def contains_xpath(self):
+        return '//*[contains(., %s)]'
+
     def enter(self, locator, index=0):
         """按下 enter 键"""
         elem = self._ele_(locator, index=index)
@@ -1074,21 +1094,6 @@ class WebDriver:
         """按下 自定义 键"""
         self.switch_to.active_element.send_keys(*keys)
 
-    @staticmethod
-    def select_by_value(elem, value):
-        """按值选择（没什么用）"""
-        Select(elem).select_by_value(value)
-
-    @staticmethod
-    def select_by_index(elem, index):
-        """按索引选择（没什么用）"""
-        Select(elem).select_by_index(index)
-
-    @staticmethod
-    def select_by_visible_text(elem, text):
-        """按文本选择（没什么用）"""
-        Select(elem).select_by_visible_text(text)
-
     # 操作的中文，方便日志打印
     __operate__ = lambda self: {
         'click': '点击 ',
@@ -1114,8 +1119,15 @@ class WebDriver:
         """获取元素自带的文本特征"""
         res = re.findall(r"text\(\)\.*.*?]", locator) or re.findall(r"holder\.*.*?]", locator)
         desc = locator
+
+        # 有的既有文字也有following，以下能精准描述
+        rtext = locator.rfind('text')
+        rholder = locator.rfind('holder')
+        rtext = rtext if rtext > rholder else rholder
+        rfollowing = locator.rfind('following')
+
         if res:
-            res = res[-1]
+            res = res[-1]  # 如果有多个text，取后一个
             try:
                 text = res.index('text()')
             except ValueError:
@@ -1132,6 +1144,15 @@ class WebDriver:
             else:  # 说明只有这个属性没有值
                 r = -1
             desc = res[text + 8:r]
+        if rfollowing > rtext:
+            last_tag1 = locator.rfind('/') + 1
+            last_tag2 = locator.rfind('::') + 2
+            last_tag1 = last_tag1 if last_tag1 > last_tag2 else last_tag2
+            last_tag3 = locator.rfind('[')
+            last_tag = locator[last_tag1:last_tag3]
+            if last_tag3 < last_tag1:
+                last_tag = locator[last_tag1:]
+            desc = desc + ' 的 ' + last_tag
         return desc
 
 
@@ -1406,7 +1427,8 @@ class upload:
         else:
             if delay >= 2:
                 delay = delay - 2
-            time.sleep(delay)
+            if not delay <= 0:
+                time.sleep(delay)
             return True
 
 
