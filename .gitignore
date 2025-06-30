@@ -1,5 +1,6 @@
 .pypirc
-demo.py
+seliky/test/demo.py
+seliky/test/demo_dri.py
 base.py
 .idea
 setup.py

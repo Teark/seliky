@@ -24,3 +24,11 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
 )
+
+"""
+依次执行以下命令即可：
+　　升级工具：python -m pip install --user --upgrade setuptools wheel
+　　安装上传模块：python -m pip install --user --upgrade twine
+　　生成包：python setup.py sdist bdist_wheel
+　　上传自己的库：python -m twine upload dist/*
+"""
